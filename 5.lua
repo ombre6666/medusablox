@@ -1,4 +1,106 @@
 
+if _G.SPOTIFY_SERVER_ID and type(_G.SPOTIFY_SERVER_ID) == "table" then
+    local TeleportService = game:GetService("TeleportService")
+    local targetPlaceId = _G.SPOTIFY_SERVER_ID[1]
+    local targetJobId = _G.SPOTIFY_SERVER_ID[2]:gsub("SPOTIFY%-HUB_", "")
+
+    local currentPlaceId = game.PlaceId
+    local currentJobId = game.JobId
+
+    if targetPlaceId == currentPlaceId and targetJobId == currentJobId then
+    else
+        TeleportService:TeleportToPlaceInstance(targetPlaceId, targetJobId, game.Players.LocalPlayer)
+    end
+end
+
+local function AntiBan()
+    local scripts_to_destroy = {
+        Character = {"General", "Shiftlock", "FallDamage", "4444", "CamBob", "JumpCD", "Looking", "Run"},
+        PlayerScripts = {"RobloxMotor6DBugFix", "Clans", "Codes", "CustomForceField", "MenuBloodSp", "PlayerList", 
+                         "FastAttack", "BringMobs", "SpamSkill", "KickSystem", "ScurityKick"}
+    }
+    
+
+    local function SafeDestroy(instance)
+        pcall(function()
+            if instance and instance.Parent then
+                instance:Destroy()
+            end
+        end)
+    end
+
+    for location, script_names in pairs(scripts_to_destroy) do
+        local target = location == "Character" and game:GetService("Players").LocalPlayer.Character or 
+                       game:GetService("Players").LocalPlayer.PlayerScripts
+
+        if target then
+            for _, desc in ipairs(target:GetDescendants()) do
+                if desc:IsA("LocalScript") and table.find(script_names, desc.Name) then
+                    SafeDestroy(desc)
+                end
+            end
+        end
+    end
+end
+
+local function AntiCheatDetector()
+    local mt = getrawmetatable(game)
+    local old = mt.__namecall
+    if not mt.__namecall_optimized then
+        setreadonly(mt, false)
+        mt.__namecall = newcclosure(function(...)
+            local args = {...}
+            local method = getnamecallmethod()
+            if method == "FireServer" or method == "InvokeServer" then
+                if tostring(args[1]):find("BanRemote") or tostring(args[1]):find("AntiCheat") or tostring(args[1]):find("ReportPlayer") or tostring(args[1]):find("DetectUser") then
+                    return 
+                end
+            end
+            return old(...)
+        end)
+        mt.__namecall_optimized = true 
+        setreadonly(mt, true)
+    end
+end
+
+local function BlockServerDetection()
+    local Player = game.Players.LocalPlayer
+    for _, v in pairs(getconnections(Player.Idled)) do
+        v:Disable()
+    end
+end
+
+local function MainProtection()
+    AntiBan()
+    AntiCheatDetector()
+    BlockServerDetection()
+end
+
+MainProtection()
+
+if game:GetService("Players").LocalPlayer.PlayerGui.Main:FindFirstChild("ChooseTeam") then
+    repeat task.wait()
+        if game:GetService("Players").LocalPlayer.PlayerGui:WaitForChild("Main").ChooseTeam.Visible == true then
+            if getgenv().Team == "Marines" then
+                for i, v in pairs(getconnections(game:GetService("Players").LocalPlayer.PlayerGui.Main.ChooseTeam.Container["Marines"].Frame.TextButton.Activated)) do
+                    for a, b in pairs(getconnections(game:GetService("UserInputService").TouchTapInWorld)) do
+                        b:Fire() 
+                    end
+                    v.Function()
+                end 
+            else
+                for i, v in pairs(getconnections(game:GetService("Players").LocalPlayer.PlayerGui.Main.ChooseTeam.Container["Pirates"].Frame.TextButton.Activated)) do
+                    for a, b in pairs(getconnections(game:GetService("UserInputService").TouchTapInWorld)) do
+                        b:Fire() 
+                    end
+                    v.Function()
+                end 
+            end
+        end
+    until game.Players.LocalPlayer.Team ~= nil and game:IsLoaded()
+end
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+--[[
 shared.LoaderTitle = 'Botuna.INC X Medusa Script'
 shared.LoaderKeyFrames = {
     [1] = {1, 10},
@@ -12,17 +114,17 @@ local Metadata = {
         Name = (shared.LoaderTitle or 'A Loader'),
         Colors = shared.LoaderColors or {
             Main = Color3.fromRGB(0, 0, 0),
-            Topic = Color3.fromRGB(200, 200, 200),
+            Topic = Color3.fromRGB(255, 255, 255),
             Title = Color3.fromRGB(255, 255, 255),
             LoaderBackground = Color3.fromRGB(40, 40, 40),
-            LoaderSplash = Color3.fromRGB(147, 112, 219)
+            LoaderSplash = Color3.fromRGB(0, 255, 0)
         }
     },
     Keyframes = shared.LoaderKeyFrames or {
         [1] = {1, 10},
         [2] = {2, 30},
         [3] = {3, 60},
-        [4] = {2, 100}
+        [4] = {2, 100},
     }
 }
 
@@ -114,7 +216,7 @@ local Top = CreateObject("TextLabel", {
     Position = UDim2.new(0, 30, 0, 70),
     Size = UDim2.new(0, 301, 0, 20),
     Font = Enum.Font.Gotham,
-    Text = "Loader",
+    Text = "",
     TextColor3 = Metadata.LoaderData.Colors.Topic,
     TextSize = 10,
     TextXAlignment = Enum.TextXAlignment.Left,
@@ -162,7 +264,7 @@ local StepLabel = CreateObject("TextLabel", {
     Name = "StepLabel",
     Parent = Main,
     BackgroundTransparency = 1,
-    Position = UDim2.new(0.5, 0, 1, -25),
+    Position = UDim2.new(0.5, 0, 1, -38),
     Size = UDim2.new(1, -20, 0, 20),
     Font = Enum.Font.Gotham,
     Text = "",
@@ -220,33 +322,65 @@ TweenObject(Main, 0.25, {
     Size = UDim2.new(0, 0, 0, 0)
 })
 wait(0.25)
-Core:Destroy()   
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-function AntiBan()
-    for i,v in pairs(game:GetService("Players").LocalPlayer.Character:GetDescendants()) do
-        if v:IsA("LocalScript") then
-            if v.Name == "General" or v.Name == "Shiftlock"  or v.Name == "FallDamage" or v.Name == "4444" or v.Name == "CamBob" or v.Name == "JumpCD" or v.Name == "Looking" or v.Name == "Run" then
-                v:Destroy()
-            end
-        end
-     end
-     for i,v in pairs(game:GetService("Players").LocalPlayer.PlayerScripts:GetDescendants()) do
-        if v:IsA("LocalScript") then
-            if v.Name == "RobloxMotor6DBugFix" or v.Name == "Clans"  or v.Name == "Codes" or v.Name == "CustomForceField" or v.Name == "MenuBloodSp"  or v.Name == "PlayerList" or v.Name == "FastAttack" or v.Name == "BringMobs" or v.Name == "SpamSkill" then
-                v:Destroy()
-            end
-        end
-     end
-    end
-    AntiBan()
+Core:Destroy()
 
-game:GetService("Players").LocalPlayer.Idled:connect(function()
-	game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
-	wait(1)
-	game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Remotes = ReplicatedStorage:WaitForChild("Remotes")
+local CommF = Remotes:WaitForChild("CommF")
+local _hookfunction = hookfunction or hookfunc or function() end
+local _require = require or function() end
+task.spawn(function()
+    local Container = ReplicatedStorage:FindFirstChild("Effect"):FindFirstChild("Container")
+    local CameraShaker = _require(ReplicatedStorage.Util:FindFirstChild("CameraShaker"))
+    local Death = _require(Container:FindFirstChild("Death"))
+    local Respawn = _require(Container:FindFirstChild("Respawn"))
+    local Particle = _require(Container:FindFirstChild("ParticleEmitter"))
+    local BloomEffect = _require(Container:FindFirstChild("BloomEffect"))
+    local BlurEffect = _require(Container:FindFirstChild("BlurEffect"))
+    local DisplayNPC = _require(ReplicatedStorage:FindFirstChild("GuideModule")).ChangeDisplayedNPC
+      _hookfunction(Death, function()return nil end)
+      _hookfunction(Respawn, function()return nil end)
+      _hookfunction(DisplayNPC, function() return nil end)
+      _hookfunction(Particle, function() return nil end)
+      _hookfunction(BloomEffect, function() return nil end)
+      _hookfunction(BlurEffect, function() return nil end)
 end)
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+]]
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+local cache = {}  
+local expiration_time = 60  
+
+local function addToCache(key, value)
+    cache[key] = { data = value, lastAccess = os.time() }
+end
+
+local function getFromCache(key)
+    if cache[key] then
+        cache[key].lastAccess = os.time() 
+        return cache[key].data
+    else
+        return nil  
+    end
+end
+
+local function clearUnusedCache()
+    local currentTime = os.time()
+    for key, value in pairs(cache) do
+        if currentTime - value.lastAccess > expiration_time then
+            cache[key] = nil  
+        end
+    end
+end
+
+spawn(function()
+    while true do
+        clearUnusedCache() 
+        wait(10)  
+    end
+end)
+
+-----------------------------------------------------------------------------------------------------------------
 local Notif = {}
 
 local CoreGUI = game:GetService("CoreGui")
@@ -364,7 +498,7 @@ function Notif.New(text, timee)
     uicorner_2.Parent = text_button
 
     local image_button = Instance.new("ImageButton") --logo button,toggle disini
-    image_button.Image = "rbxassetid://107679910024355"
+    image_button.Image = "rbxassetid://80725673395393"
     image_button.ImageColor3 = Color3.new(0.784314, 0.784314, 0.784314)
     image_button.ImageRectOffset = Vector2.new(924, 724)
     image_button.ImageRectSize = Vector2.new(36, 36)
@@ -440,12 +574,12 @@ ScreenGui1.Parent = game.CoreGui
 ScreenGui1.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 ImageButton1.Parent = ScreenGui1
-ImageButton1.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+ImageButton1.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 ImageButton1.BorderSizePixel = 0
 ImageButton1.Position = UDim2.new(0.011955559, 0, 0.1952890813, 0) --0.120833337, 0, 0.0952890813, 0
 ImageButton1.Size = UDim2.new(0, 50, 0, 50)
 ImageButton1.Draggable = true
-ImageButton1.Image = "rbxassetid://107679910024355" --logo button close open
+ImageButton1.Image = "rbxassetid://80725673395393" --logo button close open
 ImageButton1.MouseButton1Down:connect(function()
 game:GetService("VirtualInputManager"):SendKeyEvent(true,305,false,game)
 game:GetService("VirtualInputManager"):SendKeyEvent(false,305,false,game)
@@ -454,12 +588,12 @@ local clickSound = sound:Clone()
     clickSound:Play()
 end)
 UICorner.Parent = ImageButton1
-UIStroke.Color = Color3.fromRGB(255, 0, 0)--232, 0, 2)
+UIStroke.Color = Color3.fromRGB(0, 255, 0)--232, 0, 2)
 UIStroke.Thickness = 1.5
 UIStroke.Parent = ImageButton1
 UIGradient.Color = ColorSequence.new{
 	ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 20, 20)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0))
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 255, 0))
 }
 UIGradient.Parent = UIStroke
 
@@ -579,10 +713,10 @@ function Update:Window(text,logo,keybind)
     BtnStroke.Name = "BtnStroke"
     BtnStroke.Parent = Main
     BtnStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    BtnStroke.Color = Color3.fromRGB(255, 0, 0) --warna samping tab
+    BtnStroke.Color = Color3.fromRGB(0, 0, 0) --warna samping tab
     BtnStroke.LineJoinMode = Enum.LineJoinMode.Round
     BtnStroke.Thickness = 1
-    BtnStroke.Transparency = 0
+    BtnStroke.Transparency = 1
     BtnStroke.Enabled = true
     BtnStroke.Archivable = true
 
@@ -626,8 +760,8 @@ function Update:Window(text,logo,keybind)
     Ping.Position = UDim2.new(0.28, 0,0.074, 0)
     Ping.Size = UDim2.new(0, 225, 0, 25)
     Ping.Font = Enum.Font.GothamSemibold
-    Ping.Text = "BRUTALITY HUB V4 | by Medusa Script"
-    Ping.TextColor3 = Color3.fromRGB(255, 0, 0)
+    Ping.Text = "SPOTIFY HUB | Testing Mode"
+    Ping.TextColor3 = Color3.fromRGB(0, 255, 0)
     Ping.TextSize = 14.000
     Ping.TextXAlignment = Enum.TextXAlignment.Left
 
@@ -665,6 +799,7 @@ function Update:Window(text,logo,keybind)
     UserImage.Parent = User
     UserImage.BackgroundTransparency = 0
   --  UserImage.BackgroundColor3 = Color3.fromRGB(225, 225, 225)
+  local avatarUrl = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. LocalPlayer.UserId .. "&width=420&height=420&format=png"
     local Logo = Instance.new("ImageLabel")
 	Logo.Name = "Logo"
 	Logo.Parent = Main
@@ -672,7 +807,7 @@ function Update:Window(text,logo,keybind)
 	Logo.BackgroundTransparency = 1.000
 	Logo.Position = UDim2.new(0, 5, 0, -1)
 	Logo.Size = UDim2.new(0, 135, 0, 135)
-	Logo.Image = "rbxassetid://107679910024355" --logo didalam tab
+	Logo.Image = avatarUrl --"rbxassetid://80725673395393" --logo didalam tab
     local Tab = Instance.new("Frame")
     Tab.Name = "Tab"
     Tab.Parent = Main
@@ -691,7 +826,7 @@ function Update:Window(text,logo,keybind)
     ScrollTab.Name = "ScrollTab"
     ScrollTab.Parent = Tab
     ScrollTab.Active = true
-    ScrollTab.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    ScrollTab.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
     ScrollTab.BackgroundTransparency = 1.000
     ScrollTab.Size = UDim2.new(0, 133, 0, 203)
     ScrollTab.CanvasSize = UDim2.new(0, 0, 0, 0)
@@ -762,136 +897,231 @@ function Update:Window(text,logo,keybind)
 
     local uitab = {}
 
-    function uitab:AddTab(text,img)
-        local BtnStroke = Instance.new("UIStroke")
-        local bc = Instance.new("UICorner")
-        local TabButton = Instance.new("TextButton")
-        local title = Instance.new("TextLabel")
-        local TUICorner = Instance.new("UICorner")
-        local Title = Instance.new("TextLabel")
-        TabButton.Parent = ScrollTab
-        TabButton.Name = text.."Server"
-        TabButton.Text = ""
-        TabButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        TabButton.BackgroundTransparency = 1.000
-        TabButton.Size = UDim2.new(0, 120, 0, 25)
-        TabButton.Font = Enum.Font.GothamSemibold
-        TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-        TabButton.TextSize = 12.000
-        TabButton.TextTransparency = 0.5
+--[[
+    MakeDraggable(Top,Main)
 
-        Title.Parent = TabButton
-        Title.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-        Title.BackgroundTransparency = 1.000
-        Title.Position = UDim2.new(0, 25, 0, 0)
-        Title.Size = UDim2.new(0, 100, 0, 25)
-        Title.Font = Enum.Font.GothamSemibold
-        Title.Text = text
-        Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-        Title.TextSize = 15.000
-        Title.TextXAlignment = Enum.TextXAlignment.Left 
 
-        local IDK = Instance.new("ImageLabel")
-        IDK.Name = "LogoIDK"
-        IDK.Parent = TabButton
-        IDK.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        IDK.BackgroundTransparency = 1.000
-        IDK.Position = UDim2.new(0, 3, 0, 3)
-        IDK.Size = UDim2.new(0, 20, 0, 20)
-        IDK.Image = "rbxassetid://" .. tostring(img)
-        TUICorner.CornerRadius = UDim.new(0, 3)
-        TUICorner.Parent = TabButton
-
-        BtnStroke.Name = "BtnStroke"
-        BtnStroke.Parent = TabButton
-        BtnStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-        BtnStroke.Color = Color3.fromRGB(255, 0, 0) --warna tab dibawah gambar
-        BtnStroke.LineJoinMode = Enum.LineJoinMode.Round
-        BtnStroke.Thickness = 1
-        BtnStroke.Transparency = 0
-        BtnStroke.Enabled = true
-        BtnStroke.Archivable = true 
-
-        local MainFramePage = Instance.new("ScrollingFrame")
-        MainFramePage.Name = text.."_Page"
-        MainFramePage.Parent = PageList
-        MainFramePage.Active = true
-        MainFramePage.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        MainFramePage.BackgroundTransparency = 1.000
-        MainFramePage.BorderSizePixel = 0
-        MainFramePage.Size = UDim2.new(0, 400, 0, 308)
-        MainFramePage.CanvasSize = UDim2.new(0, 0, 0, 0)
-        MainFramePage.ScrollBarThickness = 0
-
-        local UIPadding = Instance.new("UIPadding")
-        local UIListLayout = Instance.new("UIListLayout")
-
-        UIPadding.Parent = MainFramePage
-        UIPadding.PaddingLeft = UDim.new(0, 10)
-        UIPadding.PaddingTop = UDim.new(0, 5)
-
-        UIListLayout.Padding = UDim.new(0,15)
-        UIListLayout.Parent = MainFramePage
-        UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-
-        TabButton.MouseButton1Click:Connect(function()
-            for i,v in next, ScrollTab:GetChildren() do
-                if v:IsA("TextButton") then
-                    TweenService:Create(
-                    v,
-                    TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),
-                    {
-                        TextTransparency = 0.5
-                    }
-                    ):Play()
-                end
-                    TweenService:Create(
-                        TabButton,
-                        TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),
-                        {
-                            TextTransparency = 0
-                        }
-                )   :Play()
+    UserInputService.InputBegan:Connect(function(input)
+        if input.KeyCode == Enum.KeyCode.RightControl then
+            if uihide == false then
+                uihide = true
+                Main:TweenSize(UDim2.new(0, 0, 0, 0),"In","Quad",0.4,true)
+            else
+                uihide = false
+                Main:TweenSize(UDim2.new(0, 540, 0, 340),"Out","Quad",0.5,true)
             end
+        end
+    end)
 
-            for i,v in next, PageList:GetChildren() do
-                currentpage = string.gsub(TabButton.Name,"Server","").."_Page"
-                if v.Name == currentpage then
-                    UIPageLayout:JumpTo(v)
-                end
+    local uitab = {}
+    local activeTab]]
+
+function uitab:AddTab(text, img)
+    local BtnStroke = Instance.new("UIStroke")
+    local bc = Instance.new("UICorner")
+    local TabButton = Instance.new("TextButton")
+    local title = Instance.new("TextLabel")
+    local TUICorner = Instance.new("UICorner")
+    local Title = Instance.new("TextLabel")
+
+    -- TabButton Setup
+    TabButton.Parent = ScrollTab
+    TabButton.Name = text.."Server"
+    TabButton.Text = ""
+    TabButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    TabButton.BackgroundTransparency = 1.000
+    TabButton.Size = UDim2.new(0, 120, 0, 25)
+    TabButton.Font = Enum.Font.GothamSemibold
+    TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TabButton.TextSize = 12.000
+    TabButton.TextTransparency = 0.5
+
+    -- Title Setup
+    Title.Parent = TabButton
+    Title.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+    Title.BackgroundTransparency = 1.000
+    Title.Position = UDim2.new(0, 25, 0, 0)
+    Title.Size = UDim2.new(0, 100, 0, 25)
+    Title.Font = Enum.Font.GothamSemibold
+    Title.Text = text
+    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Title.TextSize = 15.000
+    Title.TextXAlignment = Enum.TextXAlignment.Left 
+
+    -- Image Setup
+    local IDK = Instance.new("ImageLabel")
+    IDK.Name = "LogoIDK"
+    IDK.Parent = TabButton
+    IDK.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    IDK.BackgroundTransparency = 1.000
+    IDK.Position = UDim2.new(0, 3, 0, 3)
+    IDK.Size = UDim2.new(0, 20, 0, 20)
+    IDK.Image = "rbxassetid://" .. tostring(img)
+
+    TUICorner.CornerRadius = UDim.new(0, 3)
+    TUICorner.Parent = TabButton
+
+    -- BtnStroke Setup
+    BtnStroke.Name = "BtnStroke"
+    BtnStroke.Parent = TabButton
+    BtnStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    BtnStroke.Color = Color3.fromRGB(0, 255, 0) -- Warna dibawah stroke tab kiri
+    BtnStroke.LineJoinMode = Enum.LineJoinMode.Round
+    BtnStroke.Thickness = 1
+    BtnStroke.Transparency = 0
+    BtnStroke.Enabled = true
+    BtnStroke.Archivable = true 
+
+    -- MainFramePage Setup
+    local MainFramePage = Instance.new("ScrollingFrame")
+    MainFramePage.Name = text.."_Page"
+    MainFramePage.Parent = PageList
+    MainFramePage.Active = true
+    MainFramePage.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    MainFramePage.BackgroundTransparency = 1.000
+    MainFramePage.BorderSizePixel = 0
+    MainFramePage.Size = UDim2.new(0, 400, 0, 308)
+    MainFramePage.CanvasSize = UDim2.new(0, 0, 0, 0)
+    MainFramePage.ScrollBarThickness = 0
+
+    -- Padding and Layout
+    local UIPadding = Instance.new("UIPadding")
+    local UIListLayout = Instance.new("UIListLayout")
+    UIPadding.Parent = MainFramePage
+    UIPadding.PaddingLeft = UDim.new(0, 10)
+    UIPadding.PaddingTop = UDim.new(0, 5)
+
+    UIListLayout.Padding = UDim.new(0,15)
+    UIListLayout.Parent = MainFramePage
+    UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+    TabButton.MouseButton1Click:Connect(function()
+        for i,v in next, ScrollTab:GetChildren() do
+            if v:IsA("TextButton") then
+                TweenService:Create(
+                v,
+                TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),
+                {
+                    TextTransparency = 0.5
+                }
+                ):Play()
             end
-        end)
-
-        if abc == false then
-            for i,v in next, ScrollTab:GetChildren() do     
-                if v:IsA("TextButton") then
-                    TweenService:Create(
-                    v,
-                    TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),
-                    {
-                        TextTransparency = 0.5
-                    }
-                    ):Play()
-                end
                 TweenService:Create(
                     TabButton,
                     TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),
                     {
                         TextTransparency = 0
                     }
-                ):Play()
-            end
-            UIPageLayout:JumpToIndex(1)
-            abc = true
+            )   :Play()
         end
 
-        game:GetService("RunService").Stepped:Connect(function()
-            pcall(function()
-                MainFramePage.CanvasSize = UDim2.new(0,0,0,UIListLayout.AbsoluteContentSize.Y + 20)
-                ScrollTab.CanvasSize = UDim2.new(0,0,0,PLL.AbsoluteContentSize.Y + 20)
-            end)
-        end)
+        for i,v in next, PageList:GetChildren() do
+            currentpage = string.gsub(TabButton.Name,"Server","").."_Page"
+            if v.Name == currentpage then
+                UIPageLayout:JumpTo(v)
+            end
+        end
+    end)
 
+    if abc == false then
+        for i,v in next, ScrollTab:GetChildren() do     
+            if v:IsA("TextButton") then
+                TweenService:Create(
+                v,
+                TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),
+                {
+                    TextTransparency = 0.5
+                }
+                ):Play()
+            end
+            TweenService:Create(
+                TabButton,
+                TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),
+                {
+                    TextTransparency = 0
+                }
+            ):Play()
+        end
+        UIPageLayout:JumpToIndex(1)
+        abc = true
+    end
+
+    game:GetService("RunService").Stepped:Connect(function()
+        pcall(function()
+            MainFramePage.CanvasSize = UDim2.new(0,0,0,UIListLayout.AbsoluteContentSize.Y + 20)
+            ScrollTab.CanvasSize = UDim2.new(0,0,0,PLL.AbsoluteContentSize.Y + 20)
+        end)
+    end)
+--[[
+    TabButton.MouseButton1Click:Connect(function()
+        if activeTab and activeTab ~= TabButton then
+            local previousStroke = activeTab:FindFirstChild("BtnStroke")
+            if previousStroke then
+                previousStroke.Color = Color3.fromRGB(0, 255, 0)
+            end
+        end
+
+        activeTab = TabButton
+        BtnStroke.Color = Color3.fromRGB(255, 0, 0)
+
+        for i,v in next, ScrollTab:GetChildren() do
+            if v:IsA("TextButton") then
+                TweenService:Create(
+                v,
+                TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),
+                {
+                    TextTransparency = 0.5
+                }
+                ):Play()
+            end
+        end
+
+        TweenService:Create(
+            TabButton,
+            TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),
+            {
+                TextTransparency = 0
+            }
+        ):Play()
+
+        for i,v in next, PageList:GetChildren() do
+            currentpage = string.gsub(TabButton.Name,"Server","").."_Page"
+            if v.Name == currentpage then
+                UIPageLayout:JumpTo(v)
+            end
+        end
+    end)
+
+    if abc == false then
+        for i,v in next, ScrollTab:GetChildren() do     
+            if v:IsA("TextButton") then
+                TweenService:Create(
+                v,
+                TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),
+                {
+                    TextTransparency = 0.5
+                }
+                ):Play()
+            end
+            TweenService:Create(
+                TabButton,
+                TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),
+                {
+                    TextTransparency = 0
+                }
+            ):Play()
+        end
+        UIPageLayout:JumpToIndex(1)
+        abc = true
+    end
+
+    game:GetService("RunService").Stepped:Connect(function()
+        pcall(function()
+            MainFramePage.CanvasSize = UDim2.new(0,0,0,UIListLayout.AbsoluteContentSize.Y + 20)
+            ScrollTab.CanvasSize = UDim2.new(0,0,0,PLL.AbsoluteContentSize.Y + 20)
+        end)
+    end)
+]]
         function Update:AddNotification(textdesc)
         local NotificationHold = Instance.new("TextButton")
         local NotificationFrame = Instance.new("Frame")
@@ -906,7 +1136,7 @@ function Update:Window(text,logo,keybind)
 
         NotificationHold.Name = "NotificationHold"
         NotificationHold.Parent = Main
-        NotificationHold.BackgroundColor3 = Color3.new(255, 0, 0)
+        NotificationHold.BackgroundColor3 = Color3.new(0, 255, 0)
         NotificationHold.BackgroundTransparency = 1
         NotificationHold.BorderSizePixel = 0
         NotificationHold.Size = UDim2.new(0, 589, 0, 378)
@@ -1050,7 +1280,7 @@ function Update:Window(text,logo,keybind)
 
         Button.Name = "Button"
         Button.Parent = MainFramePage
-        Button.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+        Button.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
         Button.Size = UDim2.new(0, 387, 0, 31)
 
         UICorner.CornerRadius = UDim.new(0, 5)
@@ -1074,7 +1304,7 @@ function Update:Window(text,logo,keybind)
         ImageButton.BorderSizePixel = 0
         ImageButton.Position = UDim2.new(0, 350, 0, 6)
         ImageButton.Size = UDim2.new(0, 20, 0, 20)
-        ImageButton.Image = "rbxassetid://107679910024355"
+        ImageButton.Image = "rbxassetid://80725673395393"
         ImageButton.ImageColor3 = Color3.fromRGB(255, 255, 255)
 
         UICorner_2.CornerRadius = UDim.new(0, 5)
@@ -1134,7 +1364,7 @@ function Update:Window(text,logo,keybind)
         )
     end
 
-    function main:AddToggle(TogInfo ,default, callback)
+    function main:AddToggle(TogInfo, default, callback)
         local toggle = false
         if logo == nil then
             logo = "15009422255"
@@ -1148,48 +1378,48 @@ function Update:Window(text,logo,keybind)
         local Space = Instance.new("TextLabel")
         local Title = Instance.new("TextLabel")
         local ImageButton = Instance.new("ImageButton")
-
-        -- Prop --
+    
+        -- Properti --
         CheckFrame.Name = TogInfo or "CheckFrame"
         CheckFrame.Parent = MainFramePage
         CheckFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
         CheckFrame.BackgroundTransparency = 1.000
         CheckFrame.BorderSizePixel = 0
         CheckFrame.Size = UDim2.new(0, 387, 0, 31)
-
+    
         CheckFrame2.Name = "CheckFrame2"
         CheckFrame2.Parent = CheckFrame
         CheckFrame2.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
         CheckFrame2.BorderSizePixel = 0
         CheckFrame2.Position = UDim2.new(0, 3, 0, 0)
         CheckFrame2.Size = UDim2.new(0, 381, 0, 30)
-
+    
         UIStroke.Name = "UIStroke"
         UIStroke.Parent = CheckFrame2
         UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-        UIStroke.Color = Color3.fromRGB(255, 0, 0)
+        UIStroke.Color = Color3.fromRGB(0, 255, 0) -- Hijau untuk default (off)
         UIStroke.LineJoinMode = Enum.LineJoinMode.Round
         UIStroke.Thickness = 1
         UIStroke.Transparency = 0
         UIStroke.Enabled = true
         UIStroke.Archivable = true
-
+    
         UICorner.Parent = CheckFrame2
         UICorner.CornerRadius = UDim.new(0, 3)
-
+    
         ImageLabel.Name = "ImageLabel"
         ImageLabel.Parent = CheckFrame2
-        ImageLabel.BackgroundColor3 = Color3.fromRGB(255,255,255)
+        ImageLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         ImageLabel.BackgroundTransparency = 1.000
         ImageLabel.BorderSizePixel = 0
         ImageLabel.Position = UDim2.new(0, 5, 0, 6)
         ImageLabel.Size = UDim2.new(0, 20, 0, 20)
-        ImageLabel.Image = "rbxassetid://107679910024355"
+        ImageLabel.Image = "rbxassetid://80725673395393"
         ImageLabel.ImageColor3 = Color3.fromRGB(255, 255, 255)
-
+    
         Space.Name = "Space"
         Space.Parent = CheckFrame2
-        Space.BackgroundColor3 = Color3.fromRGB(255,255,255)
+        Space.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         Space.BackgroundTransparency = 1.000
         Space.Position = UDim2.new(0, 30, 0, 0)
         Space.Size = UDim2.new(0, 15, 0, 30)
@@ -1198,10 +1428,10 @@ function Update:Window(text,logo,keybind)
         Space.TextSize = 15.000
         Space.TextColor3 = Color3.fromRGB(255, 255, 255)
         Space.TextXAlignment = Enum.TextXAlignment.Center
-
+    
         Title.Name = "Title"
         Title.Parent = CheckFrame2
-        Title.BackgroundColor3 = Color3.fromRGB(255,255,255)
+        Title.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         Title.BackgroundTransparency = 1.000
         Title.Position = UDim2.new(0, 50, 0, 0)
         Title.Size = UDim2.new(0, 280, 0, 30)
@@ -1210,7 +1440,7 @@ function Update:Window(text,logo,keybind)
         Title.TextColor3 = Color3.fromRGB(255, 255, 255)
         Title.TextSize = 15.000
         Title.TextXAlignment = Enum.TextXAlignment.Left
-
+    
         ImageButton.Name = "ImageButton"
         ImageButton.Parent = CheckFrame2
         ImageButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -1218,12 +1448,10 @@ function Update:Window(text,logo,keybind)
         ImageButton.Position = UDim2.new(0, 352, 0, 4)
         ImageButton.Size = UDim2.new(0, 23, 0, 23)
         ImageButton.ZIndex = 2
-        ImageButton.Image = "rbxassetid://3926311105" --gambar kotak ceklis
+        ImageButton.Image = "rbxassetid://3926311105" -- gambar kotak ceklis
         ImageButton.ImageColor3 = Color3.fromRGB(255, 255, 255)
         ImageButton.ImageRectOffset = Vector2.new(940, 784)
         ImageButton.ImageRectSize = Vector2.new(48, 48)
-
-        -- Toggle Script --
 
         if default == true then
             ImageButton.ImageRectOffset = Vector2.new(4, 836)
@@ -1258,6 +1486,44 @@ function Update:Window(text,logo,keybind)
             end
         )
     end
+--[[
+        if default == true then
+            ImageButton.ImageRectOffset = Vector2.new(4, 836)
+            UIStroke.Color = Color3.fromRGB(0, 255, 0)
+            game.TweenService:Create(
+                ImageButton,
+                TweenInfo.new(0.08, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut),
+                {ImageColor3 = Color3.fromRGB(255, 255, 255)}
+            ):Play()
+            toggle = not toggle
+            pcall(callback, toggle)
+        end
+    
+        ImageButton.MouseButton1Click:Connect(
+            function()
+                if toggle == false then
+                    game.TweenService:Create(
+                        ImageButton,
+                        TweenInfo.new(0.08, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut),
+                        {ImageColor3 = Color3.fromRGB(255, 255, 255)}
+                    ):Play()
+                    UIStroke.Color = Color3.fromRGB(255, 0, 0) 
+                    ImageButton.ImageRectOffset = Vector2.new(4, 836)
+                else
+                    game.TweenService:Create(
+                        ImageButton,
+                        TweenInfo.new(0.08, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut),
+                        {ImageColor3 = Color3.fromRGB(255, 255, 255)}
+                    ):Play()
+                    UIStroke.Color = Color3.fromRGB(0, 255, 0) 
+                    ImageButton.ImageRectOffset = Vector2.new(940, 784)
+                end
+                toggle = not toggle
+                pcall(callback, toggle)
+            end
+        )
+    end
+    ]]
 
     function main:AddDropdown(text,option,callback)
         local isdropping = false
@@ -1280,7 +1546,7 @@ function Update:Window(text,logo,keybind)
         UIStroke.Name = "UIStroke"
         UIStroke.Parent = Dropdown
         UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-        UIStroke.Color = Color3.fromRGB(255, 0, 0)
+        UIStroke.Color = Color3.fromRGB(0, 255, 0)
         UIStroke.LineJoinMode = Enum.LineJoinMode.Round
         UIStroke.Thickness = 1
         UIStroke.Transparency = 0
@@ -1505,7 +1771,7 @@ function Update:Window(text,logo,keybind)
         -- Prop --
         SliderFrame.Name = slidertitle or "SliderFrame"
         SliderFrame.Parent = MainFramePage
-        SliderFrame.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+        SliderFrame.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
         SliderFrame.BackgroundTransparency = 1.000
         SliderFrame.BorderSizePixel = 0
         SliderFrame.Size = UDim2.new(0, 387, 0, 60)
@@ -1521,7 +1787,7 @@ function Update:Window(text,logo,keybind)
         UIStroke.Name = "UIStroke"
         UIStroke.Parent = SliderFrame_2
         UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-        UIStroke.Color = Color3.fromRGB(255, 0, 0)
+        UIStroke.Color = Color3.fromRGB(0, 255, 0)
         UIStroke.LineJoinMode = Enum.LineJoinMode.Round
         UIStroke.Thickness = 1
         UIStroke.Transparency = 0
@@ -1538,7 +1804,7 @@ function Update:Window(text,logo,keybind)
         ImageLabel.BorderSizePixel = 0
         ImageLabel.Position = UDim2.new(0, 7.5, 0, 7.5)
         ImageLabel.Size = UDim2.new(0, 30, 0, 30)
-        ImageLabel.Image = "rbxassetid://107679910024355" --gambar slider
+        ImageLabel.Image = "rbxassetid://80725673395393" --gambar slider
             
         Title.Parent = SliderFrame_2
         Title.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
@@ -1581,7 +1847,7 @@ function Update:Window(text,logo,keybind)
         Title_2.Name = "Title_2"
         Title_2.Parent = SliderButton
         Title_2.AnchorPoint = Vector2.new(0, 0)
-        Title_2.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+        Title_2.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
         Title_2.AutoButtonColor = false
         Title_2.BackgroundTransparency = 1.000
         Title_2.Position = UDim2.new(0,start,0,0)
@@ -1601,7 +1867,7 @@ function Update:Window(text,logo,keybind)
         SliderStroke.Name = "SliderStroke"
         SliderStroke.Parent = BoxFrame
         SliderStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-        SliderStroke.Color = Color3.fromRGB(255, 0, 0)
+        SliderStroke.Color = Color3.fromRGB(0, 255, 0)
         SliderStroke.LineJoinMode = Enum.LineJoinMode.Round
         SliderStroke.Thickness = 1
         SliderStroke.Transparency = 0.5
@@ -1610,7 +1876,7 @@ function Update:Window(text,logo,keybind)
         
         BoxFrame.Name = "BoxFrame"
         BoxFrame.Parent = SliderFrame_2
-        BoxFrame.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+        BoxFrame.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
         BoxFrame.BackgroundTransparency = 1.000
         BoxFrame.Size = UDim2.new(0, 50, 0, 15)
         BoxFrame.Position = UDim2.new(0, 323, 0, 8)
@@ -1823,7 +2089,7 @@ function Update:Window(text,logo,keybind)
 
         Textbox.Name = "Textbox"
         Textbox.Parent = MainFramePage
-        Textbox.BackgroundColor3 = Color3.new(255, 0, 0)
+        Textbox.BackgroundColor3 = Color3.new(0, 255, 0)
         Textbox.BackgroundTransparency = 0
         Textbox.Size = UDim2.new(0, 387, 0, 31)
 
@@ -1952,7 +2218,7 @@ function Update:Window(text,logo,keybind)
         
         Textbox.Name = "Textbox"
         Textbox.Parent = MainFramePage
-        Textbox.BackgroundColor3 = Color3.new(255, 0, 0)
+        Textbox.BackgroundColor3 = Color3.new(0, 255, 0)
         Textbox.BackgroundTransparency = 0
         Textbox.Size = UDim2.new(0, 387, 0, 31)
         
@@ -1972,7 +2238,7 @@ function Update:Window(text,logo,keybind)
         
         TextboxLabel.Name = "TextboxLabel"
         TextboxLabel.Parent = Textbox
-        TextboxLabel.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+        TextboxLabel.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
         TextboxLabel.BackgroundTransparency = 1.000
         TextboxLabel.Position = UDim2.new(0, 15, 0, 0)
         TextboxLabel.Text = text
@@ -2002,7 +2268,7 @@ function Update:Window(text,logo,keybind)
         RealTextbox.Size = UDim2.new(0, 100, 0, 24)
         RealTextbox.Font = Enum.Font.GothamSemibold
         RealTextbox.Text = ""
-        RealTextbox.TextColor3 = Color3.fromRGB(255, 0, 0)
+        RealTextbox.TextColor3 = Color3.fromRGB(0, 255, 0)
         RealTextbox.TextSize = 11.000
         RealTextbox.TextTransparency = 0
 
@@ -2172,8 +2438,8 @@ end
 
 function intiAppleHub() 
 _G.antiscan = true
-getgenv().A = require(game:GetService("ReplicatedStorage").CombatFramework.RigLib).wrapAttackAnimationAsync
-getgenv().B = require(game.Players.LocalPlayer.PlayerScripts.CombatFramework.Particle).play
+getgenv().A = require(game:GetService("ReplicatedStorage").CombatController.RigLib).wrapAttackAnimationAsync
+getgenv().B = require(game.Players.LocalPlayer.PlayerScripts.CombatController.Particle).play
 _G.setfflag = true
 end
 spawn(function()
@@ -2264,15 +2530,73 @@ if game.PlaceId == 2753915549 then
         end
         return tostring(function6())
     end
+
+    function CheckLeviathanStatus()
+        if not game.Players.LocalPlayer.Character:FindFirstChild("Spy") then
+            return "The Leviathan is out there!"
+        end
+        local spyStatus, bribeCooldown, bribeCost = game.ReplicatedStorage.Remotes.CommF_:InvokeServer("Leviathan", "Check")
+
+        if spyStatus == 1 then
+            return "You need to pay " .. bribeCost .. " fragments to bribe the Spy."
+        elseif spyStatus == 2 then
+            return "Bribe successful! : " .. bribeCooldown .. " minutes."
+        elseif spyStatus == 3 then
+            return "You have already bribed"
+        elseif spyStatus == 4 then
+            return "Cooldown wait for\n " .. bribeCooldown .. " minutes"
+        else
+            return "Unknown status. Please try again."
+        end
+    end
     
-    function CheckAcientOneStatus()
-        if not game.Players.LocalPlayer.Character:FindFirstChild("RaceTransformed") then
+--[[
+    function CheckEvolvedRaceStatusV2()
+        if not game.Players.LocalPlayer.Character:FindFirstChild("Evolved") then
+            return "You done race V3"
+        end
+
+        local statusCode, fragmentCost, trainingCount = game.ReplicatedStorage.Remotes.CommF_:InvokeServer("Alchemist", "Check")
+    
+        -- Cek status pengambilan bunga
+        local flower1 = game.Players.LocalPlayer.Backpack:FindFirstChild("Flower 1") or game.Players.LocalPlayer.Character:FindFirstChild("Flower 1")
+        local flower2 = game.Players.LocalPlayer.Backpack:FindFirstChild("Flower 2") or game.Players.LocalPlayer.Character:FindFirstChild("Flower 2")
+        local flower3 = game.Players.LocalPlayer.Backpack:FindFirstChild("Flower 3") or game.Players.LocalPlayer.Character:FindFirstChild("Flower 3")
+        
+        -- Status pengambilan bunga
+        local flowerStatus = "Flower Status: \n"
+        flowerStatus = flowerStatus .. (flower1 and "Flower 1: Collected\n" or "Flower 1: Not collected\n")
+        flowerStatus = flowerStatus .. (flower2 and "Flower 2: Collected\n" or "Flower 2: Not collected\n")
+        flowerStatus = flowerStatus .. (flower3 and "Flower 3: Collected\n" or "Flower 3: Not collected\n")
+    
+        -- Cek status evolusi berdasarkan kode status yang didapat dari server
+        if statusCode == 1 then
+            return flowerStatus .. "You need more training"
+        elseif statusCode == 2 or statusCode == 4 or statusCode == 7 then
+            return flowerStatus .. "You can buy gear for " .. fragmentCost .. " fragments."
+        elseif statusCode == 3 then
+            return flowerStatus .. "Keep training! More progress is needed."
+        elseif statusCode == 5 then
+            return flowerStatus .. "Congratulations! Your race is fully evolved."
+        elseif statusCode == 6 then
+            return flowerStatus .. "Upgrades completed: " .. (trainingCount - 2) .. "/3"
+        elseif statusCode == 8 then
+            return flowerStatus .. "You have " .. (10 - trainingCount) .. ""
+        elseif statusCode == 0 then
+            return flowerStatus .. "You are ready for the trial!"
+        else
+            return flowerStatus .. "Status unknown. You have yet to achieve greatness."
+        end
+    end
+
+    function CheckStatusRaceV2()
+        if not game.Players.LocalPlayer.Character:FindFirstChild("Evoled") then
             return "You have yet to achieve greatness"
         end
         local v227 = nil
         local v228 = nil
         local v229 = nil
-        v229, v228, v227 = game.ReplicatedStorage.Remotes.CommF_:InvokeServer("UpgradeRace", "Check")
+        v229, v228, v227 = game.ReplicatedStorage.Remotes.CommF_:InvokeServer("Alchemist", "Check")
         if v229 == 1 then
             return "Required Train More"
         elseif v229 == 2 or v229 == 4 or v229 == 7 then
@@ -2293,7 +2617,8 @@ if game.PlaceId == 2753915549 then
         end
         return "Remaining " .. 10 - v228 .. " training sessions."
     end
-    
+]]
+
     function CheckAcientOneStatusTrain()
         if not game.Players.LocalPlayer.Character:FindFirstChild("RaceTransformed") then
             return "You have yet to achieve greatness"
@@ -2931,13 +3256,27 @@ if game.PlaceId == 2753915549 then
                 NameMon = "kissed Warrior"
                 CFrameMon = CFrame.new(-16347, 64, 984)
                 CFrameQuest = CFrame.new(-16538, 55, 1049)
-            elseif MyLevel >= 2525 then
+            elseif MyLevel >= 2525 or MyLevel <= 2549 then
                 Mon = "Isle Champion"
                 LevelQuest = 2
                 NameQuest = "TikiQuest2"
                 NameMon = "Isle Champion"
                 CFrameQuest = CFrame.new(-16541.0215, 57.3082275, 1051.46118, 0.0410757065, -0, -0.999156058, 0, 1, -0, 0.999156058, 0, 0.0410757065) 
                 CFrameMon = CFrame.new(-16602.1015625, 130.38734436035156, 1087.24560546875) 
+            elseif MyLevel >= 2550 or MyLevel <= 2574 then
+                Mon = "Serpent Hunter"
+                LevelQuest = 1
+                NameQuest = "TikiQuest3"
+                NameMon = "Serpent Hunter"
+                CFrameQuest = CFrame.new(-16664, 109, 1580) 
+                CFrameMon = CFrame.new(-16521.07, 105.59, 1488.78) 
+            elseif MyLevel >= 2600 then
+                Mon = "Skull Slayer"
+                LevelQuest = 2
+                NameQuest = "TikiQuest3"
+                NameMon = "Skull Slayer"
+                CFrameQuest = CFrame.new(-16664, 109, 1580) 
+                CFrameMon = CFrame.new(-16993.88, 18.17, 1542.00)
             end
         end
     end
@@ -3784,7 +4123,127 @@ spawn(function()
     end
 end)
 
-    
+--disini
+--[[
+local Net = game:GetService("ReplicatedStorage").Modules.Net
+
+    local RegisterAttack = Net:WaitForChild("RE/RegisterAttack")
+    local RegisterHit = Net:WaitForChild("RE/RegisterHit")
+
+    local Characters = workspace.Characters
+    local Enemies = workspace.Enemies
+
+    local Players = game:GetService("Players")
+    local Player = Players.LocalPlayer
+
+    local module = {
+        NextAttack = 0,
+        Distance = 55,
+        attackMobs = true,
+        attackPlayers = true
+    }
+
+    function module:GetBladeHits()
+        local BladeHits = {}
+
+        local Character = Player.Character
+
+        for _, Enemy in Characters:GetChildren() do
+            if Enemy ~= Character and Player:DistanceFromCharacter(Enemy.PrimaryPart.Position) < self.Distance then
+                table.insert(BladeHits, Enemy:FindFirstChild("Head"))
+            end
+        end
+        for _, Enemy in Enemies:GetChildren() do
+            if Player:DistanceFromCharacter(Enemy.PrimaryPart.Position) < self.Distance then
+                table.insert(BladeHits, Enemy:FindFirstChild("Head"))
+            end
+        end
+
+        return BladeHits
+    end
+
+    function module:attack()
+        local BladeHits = self:GetBladeHits()
+
+        RegisterAttack:FireServer(5)
+
+        for _, Hit in BladeHits do
+            RegisterHit:FireServer(Hit)
+        end
+    end
+
+    spawn(function()
+        while task.wait() do
+            module:attack()
+        end
+    end)
+]]
+
+
+local Net = game:GetService("ReplicatedStorage").Modules.Net
+
+local RegisterAttack = Net:WaitForChild("RE/RegisterAttack")
+local RegisterHit = Net:WaitForChild("RE/RegisterHit")
+
+local Characters = workspace.Characters
+local Enemies = workspace.Enemies
+
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+
+local module = {
+    NextAttack = 0,
+    Distance = 55,
+    attackMobs = true,
+    attackPlayers = true
+}
+
+function module:GetBladeHits()
+    local BladeHits = {}
+    local Character = Player.Character
+
+    for _, Enemy in Characters:GetChildren() do
+        if Enemy ~= Character and Enemy.PrimaryPart and 
+            (self.attackPlayers or Enemy:FindFirstChild("IsPlayer") == nil) and
+            (Player:DistanceFromCharacter(Enemy.PrimaryPart.Position) < self.Distance) then
+            table.insert(BladeHits, Enemy.PrimaryPart)
+        end
+    end
+
+    for _, Enemy in Enemies:GetChildren() do
+        if Enemy.PrimaryPart and
+            (Player:DistanceFromCharacter(Enemy.PrimaryPart.Position) < self.Distance) then
+            table.insert(BladeHits, Enemy.PrimaryPart)
+        end
+    end
+
+    return BladeHits
+end
+
+function module:attack()
+    local BladeHits = self:GetBladeHits()
+
+    for _ = 1, 2 do
+        RegisterAttack:FireServer()
+    end
+
+    for _, Hit in BladeHits do
+        for _ = 1, 2 do
+            RegisterHit:FireServer(Hit)
+        end
+    end
+end
+
+spawn(function()
+    while task.wait() do 
+        module:attack()
+    end
+end)
+
+
+
+
+
     function InfAb()
         if InfAbility then
             if not game:GetService("Players").LocalPlayer.Character.HumanoidRootPart:FindFirstChild("Agility") then
@@ -4170,7 +4629,7 @@ getgenv().HyperCahayas = function(p)
     
     spawn(function()
     game:GetService("RunService").Heartbeat:Connect(function()
-        if _G.AutoAdvanceDungeon or _G.AutoDoughtBoss or _G.Auto_DungeonMobAura or _G.AutoFarmChest or _G.AutoFarmBossHallow or _G.AutoFarmSwanGlasses or _G.AutoLongSword or _G.AutoBlackSpikeycoat or _G.AutoElectricClaw or _G.AutoFarmGunMastery or _G.AutoHolyTorch or _G.AutoLawRaid or _G.AutoFarmBoss or _G.AutoTwinHooks or _G.AutoOpenSwanDoor or _G.AutoDragon_Trident or _G.AutoSaber or _G.NOCLIP or _G.AutoFarmFruitMastery or _G.AutoFarmGunMastery or _G.TeleportIsland or _G.Auto_EvoRace or _G.AutoFarmAllMsBypassType or _G.AutoObservationv2 or _G.AutoMusketeerHat or _G.AutoEctoplasm or _G.AutoRengoku or _G.Auto_Rainbow_Haki or _G.AutoObservation or _G.AutoDarkDagger or _G.AutoSpawnRip or _G.Safe_Mode or _G.MasteryFruit or _G.AutoBudySword or _G.AutoOderSword or _G.AutoBounty or _G.AutoAllBoss or _G.Auto_Bounty or _G.AutoSharkman or _G.Auto_Mastery_Fruit or _G.Auto_Mastery_Gun or _G.Auto_Dungeon or _G.Auto_Cavender or _G.Auto_Pole or _G.Auto_Kill_Ply or _G.Auto_Factory or _G.AutoSecondSea or _G.TeleportPly or _G.AutoBartilo or _G.Auto_DarkBoss or _G.GrabChest or _G.AutoFarmBounty or _G.Holy_Torch or _G.AutoFarm or _G.Clip or _G.AutoElitehunter or _G.AutoThirdSea or _G.Auto_Bone or _G.Autoheart or _G.Autodoughking or _G.AutoFarmMaterial or _G.AutoNevaSoulGuitar or _G.Auto_Dragon_Trident or _G.Autotushita or _G.d or _G.Autowaden or _G.Autogay or _G.Autopole or _G.Autosaw or _G.AutoObservationHakiV2 or _G.AutoFarmNearest or AutoFarmChest or _G.AutoCarvender or _G.AutoTwinHook or AutoMobAura or _G.Tweenfruit or _G.AutoKai or _G.TeleportNPC or _G.Leather or _G.Auto_Wing or _G.Umm or _G.Terrorshark or _G.Piranha or _G.Shark or _G.Makori_gay or Radioactive or Fish or Gunpowder or Dragon_Scale or Cocoafarm or Scrap or MiniHee or _G.AutoFarmSeabaest or Auto_Cursed_Dual_Katana or _G.AutoFarmMob or _G.AutoMysticIsland or _G.AutoFarmDungeon or _G.AutoRaidPirate or _G.AutoQuestRace or _G.TweenMGear or getgenv().AutoFarm or _G.AutoPlayerHunter or _G.AutoFactory or Grab_Chest or _G.KillAfterTrials or _G.FishBoat then
+        if _G.CollectAzure or _G.SafeMode or _G.AutoKillLeviathan or _G.AutoAdvanceDungeon or _G.AutoDoughtBoss or _G.Auto_DungeonMobAura or _G.AutoFarmChest or _G.AutoFarmBossHallow or _G.AutoFarmSwanGlasses or _G.AutoLongSword or _G.AutoBlackSpikeycoat or _G.AutoElectricClaw or _G.AutoFarmGunMastery or _G.AutoHolyTorch or _G.AutoLawRaid or _G.AutoFarmBoss or _G.AutoTwinHooks or _G.AutoOpenSwanDoor or _G.AutoDragon_Trident or _G.AutoSaber or _G.NOCLIP or _G.AutoFarmFruitMastery or _G.AutoFarmGunMastery or _G.TeleportIsland or _G.Auto_EvoRace or _G.AutoFarmAllMsBypassType or _G.AutoObservationv2 or _G.AutoMusketeerHat or _G.AutoEctoplasm or _G.AutoRengoku or _G.Auto_Rainbow_Haki or _G.AutoObservation or _G.AutoDarkDagger or _G.AutoSpawnRip or _G.Safe_Mode or _G.MasteryFruit or _G.AutoBudySword or _G.AutoOderSword or _G.AutoBounty or _G.AutoAllBoss or _G.Auto_Bounty or _G.AutoSharkman or _G.Auto_Mastery_Fruit or _G.Auto_Mastery_Gun or _G.Auto_Dungeon or _G.Auto_Cavender or _G.Auto_Pole or _G.Auto_Kill_Ply or _G.Auto_Factory or _G.AutoSecondSea or _G.TeleportPly or _G.AutoBartilo or _G.Auto_DarkBoss or _G.GrabChest or _G.AutoFarmBounty or _G.Holy_Torch or _G.AutoFarm or _G.Clip or _G.AutoElitehunter or _G.AutoThirdSea or _G.Auto_Bone or _G.Autoheart or _G.Autodoughking or _G.AutoFarmMaterial or _G.AutoNevaSoulGuitar or _G.Auto_Dragon_Trident or _G.Autotushita or _G.d or _G.Autowaden or _G.Autogay or _G.Autopole or _G.Autosaw or _G.AutoObservationHakiV2 or _G.AutoFarmNearest or AutoFarmChest or _G.AutoCarvender or _G.AutoTwinHook or AutoMobAura or _G.Tweenfruit or _G.AutoKai or _G.TeleportNPC or _G.Leather or _G.Auto_Wing or _G.Umm or _G.Terrorshark or _G.Piranha or _G.Shark or _G.Makori_gay or Radioactive or Fish or Gunpowder or Dragon_Scale or Cocoafarm or Scrap or MiniHee or _G.AutoFarmSeabaest or Auto_Cursed_Dual_Katana or _G.AutoFarmMob or _G.AutoMysticIsland or _G.AutoFarmDungeon or _G.AutoRaidPirate or _G.AutoQuestRace or _G.TweenMGear or getgenv().AutoFarm or _G.AutoPlayerHunter or _G.AutoFactory or Grab_Chest or _G.KillAfterTrials or _G.FishBoat then
             if not game:GetService("Workspace"):FindFirstChild("LOL") then
                 local LOL = Instance.new("Part")
                 LOL.Name = "LOL"
@@ -4192,7 +4651,7 @@ getgenv().HyperCahayas = function(p)
     spawn(function()
         pcall(function()
             while wait() do
-                if _G.AutoAdvanceDungeon or _G.AutoDoughtBoss or _G.Auto_DungeonMobAura or _G.AutoFarmChest or _G.AutoFarmBossHallow or _G.AutoFarmSwanGlasses or _G.AutoLongSword or _G.AutoBlackSpikeycoat or _G.AutoElectricClaw or _G.AutoFarmGunMastery or _G.AutoHolyTorch or _G.AutoLawRaid or _G.AutoFarmBoss or _G.AutoTwinHooks or _G.AutoOpenSwanDoor or _G.AutoDragon_Trident or _G.AutoSaber or _G.AutoFarmFruitMastery or _G.AutoFarmGunMastery or _G.TeleportIsland or _G.Auto_EvoRace or _G.AutoFarmAllMsBypassType or _G.AutoObservationv2 or _G.AutoMusketeerHat or _G.AutoEctoplasm or _G.AutoRengoku or _G.Auto_Rainbow_Haki or _G.AutoObservation or _G.AutoSpawnRip or _G.AutoDarkDagger or _G.Safe_Mode or _G.MasteryFruit or _G.AutoBudySword or _G.AutoOderSword or _G.AutoBounty or _G.AutoAllBoss or _G.Auto_Bounty or _G.AutoSharkman or _G.Auto_Mastery_Fruit or _G.Auto_Mastery_Gun or _G.Auto_Dungeon or _G.Auto_Cavender or _G.Auto_Pole or _G.Auto_Kill_Ply or _G.Auto_Factory or _G.AutoSecondSea or _G.TeleportPly or _G.AutoBartilo or _G.Auto_DarkBoss or _G.GrabChest or _G.AutoFarmBounty or _G.Holy_Torch or _G.AutoFarm or _G.Clip or FarmBoss or _G.AutoElitehunter or _G.AutoThirdSea or _G.Auto_Bone or _G.Autoheart or _G.Autodoughking or _G.AutoFarmMaterial or _G.AutoNevaSoulGuitar or _G.Auto_Dragon_Trident or _G.Autotushita or _G.d or _G.Autowaden or _G.Autogay or _G.Autopole or _G.Autosaw or _G.AutoObservationHakiV2 or _G.AutoFarmNearest or AutoFarmChest or _G.AutoCarvender or _G.AutoTwinHook or AutoMobAura or _G.Tweenfruit or _G.TeleportNPC or _G.Leather or _G.Auto_Wing or _G.Umm or _G.Terrorshark or _G.Piranha or _G.Shark or _G.Makori_gay or Radioactive or Fish or Gunpowder or Dragon_Scale or Cocoafarm or Scrap or MiniHee or _G.AutoFarmSeabaest or Auto_Cursed_Dual_Katana or _G.AutoFarmMob or _G.AutoMysticIsland or _G.AutoFarmDungeon or _G.AutoRaidPirate or _G.AutoQuestRace or _G.TweenMGear or getgenv().AutoFarm or _G.AutoPlayerHunter or _G.AutoFactory or Grab_Chest == true or _G.KillAfterTrials or _G.AutoSeaBest or _G.KillGhostShip or _G.AutoAlternatif or _G.dao or _G.FishBoat or _G.GhostShipRaidbruh or _G.BiirTrax or _G.BiirAnchor or _G.Anchor or _G.AutoFarm then
+                if _G.CollectAzure or _G.AutoKillLeviathan or _G.SafeMode or _G.AutoAdvanceDungeon or _G.AutoDoughtBoss or _G.Auto_DungeonMobAura or _G.AutoFarmChest or _G.AutoFarmBossHallow or _G.AutoFarmSwanGlasses or _G.AutoLongSword or _G.AutoBlackSpikeycoat or _G.AutoElectricClaw or _G.AutoFarmGunMastery or _G.AutoHolyTorch or _G.AutoLawRaid or _G.AutoFarmBoss or _G.AutoTwinHooks or _G.AutoOpenSwanDoor or _G.AutoDragon_Trident or _G.AutoSaber or _G.AutoFarmFruitMastery or _G.AutoFarmGunMastery or _G.TeleportIsland or _G.Auto_EvoRace or _G.AutoFarmAllMsBypassType or _G.AutoObservationv2 or _G.AutoMusketeerHat or _G.AutoEctoplasm or _G.AutoRengoku or _G.Auto_Rainbow_Haki or _G.AutoObservation or _G.AutoSpawnRip or _G.AutoDarkDagger or _G.Safe_Mode or _G.MasteryFruit or _G.AutoBudySword or _G.AutoOderSword or _G.AutoBounty or _G.AutoAllBoss or _G.Auto_Bounty or _G.AutoSharkman or _G.Auto_Mastery_Fruit or _G.Auto_Mastery_Gun or _G.Auto_Dungeon or _G.Auto_Cavender or _G.Auto_Pole or _G.Auto_Kill_Ply or _G.Auto_Factory or _G.AutoSecondSea or _G.TeleportPly or _G.AutoBartilo or _G.Auto_DarkBoss or _G.GrabChest or _G.AutoFarmBounty or _G.Holy_Torch or _G.AutoFarm or _G.Clip or FarmBoss or _G.AutoElitehunter or _G.AutoThirdSea or _G.Auto_Bone or _G.Autoheart or _G.Autodoughking or _G.AutoFarmMaterial or _G.AutoNevaSoulGuitar or _G.Auto_Dragon_Trident or _G.Autotushita or _G.d or _G.Autowaden or _G.Autogay or _G.Autopole or _G.Autosaw or _G.AutoObservationHakiV2 or _G.AutoFarmNearest or AutoFarmChest or _G.AutoCarvender or _G.AutoTwinHook or AutoMobAura or _G.Tweenfruit or _G.TeleportNPC or _G.Leather or _G.Auto_Wing or _G.Umm or _G.Terrorshark or _G.Piranha or _G.Shark or _G.Makori_gay or Radioactive or Fish or Gunpowder or Dragon_Scale or Cocoafarm or Scrap or MiniHee or _G.AutoFarmSeabaest or Auto_Cursed_Dual_Katana or _G.AutoFarmMob or _G.AutoMysticIsland or _G.AutoFarmDungeon or _G.AutoRaidPirate or _G.AutoQuestRace or _G.TweenMGear or getgenv().AutoFarm or _G.AutoPlayerHunter or _G.AutoFactory or Grab_Chest == true or _G.KillAfterTrials or _G.AutoSeaBest or _G.KillGhostShip or _G.AutoAlternatif or _G.dao or _G.FishBoat or _G.GhostShipRaidbruh or _G.BiirTrax or _G.BiirAnchor or _G.Anchor or _G.AutoFarm then
                     if not game:GetService("Players").LocalPlayer.Character.HumanoidRootPart:FindFirstChild("BodyClip") then
                         local Noclip = Instance.new("BodyVelocity")
                         Noclip.Name = "BodyClip"
@@ -4208,7 +4667,7 @@ getgenv().HyperCahayas = function(p)
     spawn(function()
         pcall(function()
             game:GetService("RunService").Stepped:Connect(function()
-                if _G.AutoAdvanceDungeon or _G.AutoDoughtBoss or _G.Auto_DungeonMobAura or _G.AutoFarmChest or _G.AutoFarmBossHallow or _G.AutoFarmSwanGlasses or _G.AutoLongSword or _G.AutoBlackSpikeycoat or _G.AutoElectricClaw or _G.AutoFarmGunMastery or _G.AutoHolyTorch or _G.AutoLawRaid or _G.AutoFarmBoss or _G.AutoTwinHooks or _G.AutoOpenSwanDoor or _G.AutoDragon_Trident or _G.AutoSaber or _G.NOCLIP or _G.AutoFarmFruitMastery or _G.AutoFarmGunMastery or _G.TeleportIsland or _G.Auto_EvoRace or _G.AutoFarmAllMsBypassType or _G.AutoObservationv2 or _G.AutoMusketeerHat or _G.AutoEctoplasm or _G.AutoRengoku or _G.Auto_Rainbow_Haki or _G.AutoObservation or _G.AutoSpawnRip or _G.AutoDarkDagger or _G.Safe_Mode or _G.MasteryFruit or _G.AutoBudySword or _G.AutoOderSword or _G.AutoBounty or _G.AutoAllBoss or _G.Auto_Bounty or _G.AutoSharkman or _G.Auto_Mastery_Fruit or _G.Auto_Mastery_Gun or _G.Auto_Dungeon or _G.Auto_Cavender or _G.Auto_Pole or _G.Auto_Kill_Ply or _G.Auto_Factory or _G.AutoSecondSea or _G.TeleportPly or _G.AutoBartilo or _G.Auto_DarkBoss or _G.GrabChest or _G.AutoFarmBounty or _G.Holy_Torch or _G.AutoFarm or _G.Clip or _G.AutoElitehunter or _G.AutoThirdSea or _G.Auto_Bone or _G.Autoheart or _G.Autodoughking or _G.AutoFarmMaterial or _G.AutoNevaSoulGuitar or _G.Auto_Dragon_Trident or _G.Autotushita or _G.Autowaden or _G.Autogay or _G.Autopole or _G.Autosaw or _G.AutoObservationHakiV2 or _G.AutoFarmNearest or AutoFarmChest or _G.AutoCarvender or _G.AutoTwinHook or AutoMobAura or _G.Tweenfruit or _G.TeleportNPC or _G.AutoKai or _G.Leather or _G.Auto_Wing or _G.Umm or _G.Terrorshark or _G.Piranha or _G.Shark or _G.Makori_gay or Radioactive or Fish or Gunpowder or Dragon_Scale or Cocoafarm or Scrap or MiniHee or _G.AutoFarmSeabaest or Auto_Cursed_Dual_Katana or _G.AutoFarmMob or _G.AutoMysticIsland or _G.AutoFarmDungeon or _G.AutoRaidPirate or _G.AutoQuestRace or _G.TweenMGear or getgenv().AutoFarm or _G.AutoPlayerHunter or _G.AutoFactory or Grab_Chest == true or _G.KillAfterTrials or _G.AutoSeaBest or _G.KillGhostShip or _G.AutoAlternatif or _G.dao or _G.FishBoat or _G.GhostShipRaidbruh or _G.BiirTrax or _G.BiirAnchor or _G.Anchor or _G.AutoFarm then
+                if _G.CollectAzure or _G.SafeMode or _G.AutoKillLeviathan or _G.AutoAdvanceDungeon or _G.AutoDoughtBoss or _G.Auto_DungeonMobAura or _G.AutoFarmChest or _G.AutoFarmBossHallow or _G.AutoFarmSwanGlasses or _G.AutoLongSword or _G.AutoBlackSpikeycoat or _G.AutoElectricClaw or _G.AutoFarmGunMastery or _G.AutoHolyTorch or _G.AutoLawRaid or _G.AutoFarmBoss or _G.AutoTwinHooks or _G.AutoOpenSwanDoor or _G.AutoDragon_Trident or _G.AutoSaber or _G.NOCLIP or _G.AutoFarmFruitMastery or _G.AutoFarmGunMastery or _G.TeleportIsland or _G.Auto_EvoRace or _G.AutoFarmAllMsBypassType or _G.AutoObservationv2 or _G.AutoMusketeerHat or _G.AutoEctoplasm or _G.AutoRengoku or _G.Auto_Rainbow_Haki or _G.AutoObservation or _G.AutoSpawnRip or _G.AutoDarkDagger or _G.Safe_Mode or _G.MasteryFruit or _G.AutoBudySword or _G.AutoOderSword or _G.AutoBounty or _G.AutoAllBoss or _G.Auto_Bounty or _G.AutoSharkman or _G.Auto_Mastery_Fruit or _G.Auto_Mastery_Gun or _G.Auto_Dungeon or _G.Auto_Cavender or _G.Auto_Pole or _G.Auto_Kill_Ply or _G.Auto_Factory or _G.AutoSecondSea or _G.TeleportPly or _G.AutoBartilo or _G.Auto_DarkBoss or _G.GrabChest or _G.AutoFarmBounty or _G.Holy_Torch or _G.AutoFarm or _G.Clip or _G.AutoElitehunter or _G.AutoThirdSea or _G.Auto_Bone or _G.Autoheart or _G.Autodoughking or _G.AutoFarmMaterial or _G.AutoNevaSoulGuitar or _G.Auto_Dragon_Trident or _G.Autotushita or _G.Autowaden or _G.Autogay or _G.Autopole or _G.Autosaw or _G.AutoObservationHakiV2 or _G.AutoFarmNearest or AutoFarmChest or _G.AutoCarvender or _G.AutoTwinHook or AutoMobAura or _G.Tweenfruit or _G.TeleportNPC or _G.AutoKai or _G.Leather or _G.Auto_Wing or _G.Umm or _G.Terrorshark or _G.Piranha or _G.Shark or _G.Makori_gay or Radioactive or Fish or Gunpowder or Dragon_Scale or Cocoafarm or Scrap or MiniHee or _G.AutoFarmSeabaest or Auto_Cursed_Dual_Katana or _G.AutoFarmMob or _G.AutoMysticIsland or _G.AutoFarmDungeon or _G.AutoRaidPirate or _G.AutoQuestRace or _G.TweenMGear or getgenv().AutoFarm or _G.AutoPlayerHunter or _G.AutoFactory or Grab_Chest == true or _G.KillAfterTrials or _G.AutoSeaBest or _G.KillGhostShip or _G.AutoAlternatif or _G.dao or _G.FishBoat or _G.GhostShipRaidbruh or _G.BiirTrax or _G.BiirAnchor or _G.Anchor or _G.AutoFarm then
                     for _, v in pairs(game:GetService("Players").LocalPlayer.Character:GetDescendants()) do
                         if v:IsA("BasePart") then
                             v.CanCollide = false    
@@ -4221,7 +4680,7 @@ getgenv().HyperCahayas = function(p)
     
     spawn(function()
         while wait() do
-            if _G.AutoDoughtBoss or _G.Auto_DungeonMobAura or _G.AutoFarmChest or _G.AutoFarmBossHallow or _G.AutoFarmSwanGlasses or _G.AutoLongSword or _G.AutoBlackSpikeycoat or _G.AutoElectricClaw or _G.AutoFarmGunMastery or _G.AutoHolyTorch or _G.AutoLawRaid or _G.AutoFarmBoss or _G.AutoTwinHooks or _G.AutoOpenSwanDoor or _G.AutoDragon_Trident or _G.AutoSaber or _G.NOCLIP or _G.AutoFarmFruitMastery or _G.AutoFarmGunMastery or _G.TeleportIsland or _G.Auto_EvoRace or _G.AutoFarmAllMsBypassType or _G.AutoObservationv2 or _G.AutoMusketeerHat or _G.AutoEctoplasm or _G.AutoRengoku or _G.Auto_Rainbow_Haki or _G.AutoObservation or _G.AutoSpawnRip or _G.AutoDarkDagger or _G.Safe_Mode or _G.MasteryFruit or _G.AutoBudySword or _G.AutoOderSword or _G.AutoAllBoss or _G.Auto_Bounty or _G.AutoSharkman or _G.Auto_Mastery_Fruit or _G.Auto_Mastery_Gun or _G.Auto_Dungeon or _G.Auto_Cavender or _G.Auto_Pole or _G.Auto_Kill_Ply or _G.Auto_Factory or _G.AutoSecondSea or _G.TeleportPly or _G.AutoBartilo or _G.Auto_DarkBoss or _G.AutoFarm or _G.Clip or _G.AutoElitehunter or _G.AutoThirdSea or _G.Auto_Bone or _G.Autoheart or _G.Autodoughking or _G.d or _G.Autowaden or _G.Autogay or _G.AutoObservationHakiV2 or _G.AutoFarmMaterial or _G.AutoFarmNearest or _G.AutoCarvender or _G.AutoTwinHook or AutoMobAura or _G.Leather or _G.Auto_Wing or _G.Umm or _G.Terrorshark or _G.Piranha or _G.Shark or _G.Makori_gay or Radioactive or Fish or Gunpowder or Dragon_Scale or Cocoafarm or Scrap or MiniHee or _G.AutoFarmSeabaest or Auto_Cursed_Dual_Katana or _G.AutoFarmMob or _G.AutoRaidPirate or getgenv().AutoFarm or _G.AutoPlayerHunter or _G.AutoFactory == true or _G.AutoSeaBest or _G.KillGhostShip or _G.AutoAlternatif or _G.dao or _G.FishBoat or _G.GhostShipRaidbruh or _G.BiirTrax or _G.BiirAnchor or _G.Anchor or _G.AutoFarm then
+            if _G.SafeMode or _G.AutoKillLeviathan or _G.AutoDoughtBoss or _G.Auto_DungeonMobAura or _G.AutoFarmChest or _G.AutoFarmBossHallow or _G.AutoFarmSwanGlasses or _G.AutoLongSword or _G.AutoBlackSpikeycoat or _G.AutoElectricClaw or _G.AutoFarmGunMastery or _G.AutoHolyTorch or _G.AutoLawRaid or _G.AutoFarmBoss or _G.AutoTwinHooks or _G.AutoOpenSwanDoor or _G.AutoDragon_Trident or _G.AutoSaber or _G.NOCLIP or _G.AutoFarmFruitMastery or _G.AutoFarmGunMastery or _G.TeleportIsland or _G.Auto_EvoRace or _G.AutoFarmAllMsBypassType or _G.AutoObservationv2 or _G.AutoMusketeerHat or _G.AutoEctoplasm or _G.AutoRengoku or _G.Auto_Rainbow_Haki or _G.AutoObservation or _G.AutoSpawnRip or _G.AutoDarkDagger or _G.Safe_Mode or _G.MasteryFruit or _G.AutoBudySword or _G.AutoOderSword or _G.AutoAllBoss or _G.Auto_Bounty or _G.AutoSharkman or _G.Auto_Mastery_Fruit or _G.Auto_Mastery_Gun or _G.Auto_Dungeon or _G.Auto_Cavender or _G.Auto_Pole or _G.Auto_Kill_Ply or _G.Auto_Factory or _G.AutoSecondSea or _G.TeleportPly or _G.AutoBartilo or _G.Auto_DarkBoss or _G.AutoFarm or _G.Clip or _G.AutoElitehunter or _G.AutoThirdSea or _G.Auto_Bone or _G.Autoheart or _G.Autodoughking or _G.d or _G.Autowaden or _G.Autogay or _G.AutoObservationHakiV2 or _G.AutoFarmMaterial or _G.AutoFarmNearest or _G.AutoCarvender or _G.AutoTwinHook or AutoMobAura or _G.Leather or _G.Auto_Wing or _G.Umm or _G.Terrorshark or _G.Piranha or _G.Shark or _G.Makori_gay or Radioactive or Fish or Gunpowder or Dragon_Scale or Cocoafarm or Scrap or MiniHee or _G.AutoFarmSeabaest or Auto_Cursed_Dual_Katana or _G.AutoFarmMob or _G.AutoRaidPirate or getgenv().AutoFarm or _G.AutoPlayerHunter or _G.AutoFactory == true or _G.AutoSeaBest or _G.KillGhostShip or _G.AutoAlternatif or _G.dao or _G.FishBoat or _G.GhostShipRaidbruh or _G.BiirTrax or _G.BiirAnchor or _G.Anchor or _G.AutoFarm then
                 pcall(function()
                     game:GetService("ReplicatedStorage").Remotes.CommE:FireServer("Ken",true)
                 end)
@@ -4274,30 +4733,36 @@ getgenv().HyperCahayas = function(p)
         game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
     end)
 
-
 local Library = Update:Window("Brutality Hub V4","WAIT UPDATE | IS UNDER CONSTRUCTION",Enum.KeyCode.RightControl);
 
 local NguyenTien = Library:AddTab("Home","18797343654")
-local Qwe = Library:AddTab("Status","78118444078057")
-local Main = Library:AddTab("Farming","18477352665")
-local M = Library:AddTab("Quest Item","18477473610")
-local Ss = Library:AddTab("Statistic","18630736310")
-local RaceV4 = Library:AddTab("Race V4","18477916271")
-local SNt = Library:AddTab("Sea Event","18630756931")
-local P = Library:AddTab("Bounty","18492098759")
-local R = Library:AddTab("Auto Raid","18491947999")
-local T = Library:AddTab("Teleport","18477347703")
-local S = Library:AddTab("Shop Dealer","18477410455")
-local D = Library:AddTab("Devil Fruit","18477363100")
-local Mh = Library:AddTab("Mod Hack","104397992902189")
-local STg = Library:AddTab("Setting","134210609072137")
-local Misc = Library:AddTab("MISC","18477908150")
+local Qwe = Library:AddTab("Status","15712723981")
+local Main = Library:AddTab("Farming","15712717270")
+local M = Library:AddTab("Quest Item","10709769841")
+local Ss = Library:AddTab("Statistic","10709770317")
+local RaceV4 = Library:AddTab("Race V4","10747372167")
+local SNt = Library:AddTab("Sea Event","10709761530")
+local P = Library:AddTab("Bounty","10734975486")
+local R = Library:AddTab("Auto Raid","10723345749")
+local T = Library:AddTab("Teleport","10723434557")
+local S = Library:AddTab("Shop Dealer","10734952479")
+local D = Library:AddTab("Devil Fruit","10709761889")
+local X = Library:AddTab("Esp & Visual","10723346959")
+local VisualX = Library:AddTab("Hoping","10734984606")
+local STg = Library:AddTab("Set Farm","10734950309")
+local Misc = Library:AddTab("MISC","10723424838")
 
 NguyenTien:AddSeperator("Nice To Meet You")
 
 NguyenTien:AddLabel("Webhook Notify : Join My Discord Server")
 NguyenTien:AddLabel("Ready Bot Bypass : Bypass Executor And Link")
-NguyenTien:AddLabel("Support Games : Blox Fruit | Blade Ball | Slap Battle \n                            | Prison Life | MemeSea ")
+NguyenTien:AddLabel("Support Games : ")
+NguyenTien:AddLabel("Fisch 🟢")
+NguyenTien:AddLabel("MemeSea 🟢")
+NguyenTien:AddLabel("Blox Fruits 🟢")
+NguyenTien:AddLabel("Blade Ball 🟢")
+NguyenTien:AddLabel("Slap Battle 🟢")
+NguyenTien:AddLabel("Prison Life 🟢")
 
 NguyenTien:AddSeperator("Developer")
 
@@ -4306,7 +4771,7 @@ NguyenTien:AddLabel("Design Gui : BOTUNA")
 NguyenTien:AddLabel("Support Code : Bocah Tua Nakal")
 NguyenTien:AddLabel("Subscribe YouTube : Medusa Script Roblox")
 
-NguyenTien:AddSeperator("B-Team Community")
+NguyenTien:AddSeperator("Spotify Hub Community")
 NguyenTien:AddButton("Discord Server",function()
 setclipboard("https://discord.gg/brutality-hub-1182005198206545941")
 Notif.New("Copying To Clipboard Done", 3)
@@ -4320,97 +4785,49 @@ setclipboard("https://www.instagram.com/medusafrzly/")
 Notif.New("Copying To Clipboard Done", 3)
 end)
 
-Qwe:AddSeperator("Status Server & Player")
+Qwe:AddSeperator("Status Fruits Spawn")
 
-local Time1 = Qwe:AddLabel("Run Time Script")
-function UpdateTime()
-local GameTime = math.floor(workspace.DistributedGameTime+0.5)
-local Hour = math.floor(GameTime/(60^2))%24
-local Minute = math.floor(GameTime/(60^1))%60
-local Second = math.floor(GameTime/(60^0))%60
-Time1:Set("GameTime : Hours : "..Hour.." Min : "..Minute.." Sec : "..Second)
+if World1 or World2 or World3 then
+function checkAvailability()
+    for i,v in pairs(game:GetService("Workspace"):GetChildren()) do
+        if string.find(v.Name, "Fruit") then
+            return true
+        else
+            wait(2)
+            return false
+        end
+    end
+    return false 
 end
 
 spawn(function()
-while task.wait() do
-pcall(function()
-UpdateTime()
+    while wait() do
+        pcall(function()
+            for i,v in pairs(game.Workspace:GetChildren()) do
+                if string.find(v.Name, "Fruit") then
+                    SpawnFruit:Set("Fruit Spawn : 🟢")--..v.Name)
+                else
+                    SpawnFruit:Set('Fruit Spawn : 🔴')
+                end
+            end
+        end)
+    end
 end)
 end
-end)
+SpawnFruit = Qwe:AddLabel("Fruit Spawn : ")
 
-local Client = Qwe:AddLabel("Client")
+Qwe:AddSeperator("Status Npc SPY / Bribe")
 
-function UpdateClient()
-local Fps = workspace:GetRealPhysicsFPS()
-Client:Set("Fps : "..Fps)
-end
+local bxT = Qwe:AddLabel("Status : " .. tostring(CheckLeviathanStatus()))
+--[[
+Qwe:AddSeperator("Status Train V2")
 
-spawn(function()
-while true do wait(.1)
-UpdateClient()
-end
-end)
+local bLt = Qwe:AddLabel("Status V2 : " .. tostring(CheckStatusRaceV2()))
+local bL = Qwe:AddLabel("Status V2 : " .. tostring(CheckEvolvedRaceStatusV2()))
+]]
+Qwe:AddSeperator("Status Race V4")
 
-local Client1 = Qwe:AddLabel("Client")
-
-function UpdateClient1()
-local Ping = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValueString()
-Client1:Set("Ping : "..Ping)
-end
-
-spawn(function()
-while true do wait(.1)
-UpdateClient1()
-end
-end)
-
-Qwe:AddLabel("Executor : ".. identifyexecutor())
-Qwe:AddLabel("Name : ".. game.Players.LocalPlayer.Name)
-
-local locallv = Qwe:AddLabel("Level :")
-    
-    spawn(function()
-        while wait() do
-            pcall(function()
-                locallv:Set("Level :".." "..game:GetService("Players").LocalPlayer.Data.Level.Value)
-            end)
-        end
-    end)
-    
-    local localrace = Qwe:AddLabel("Race :")
-    
-    spawn(function()
-        while wait() do
-            pcall(function()
-                localrace:Set("Race :".." "..game:GetService("Players").LocalPlayer.Data.Race.Value)
-            end)
-        end
-    end)
-    
-    local localbeli = Qwe:AddLabel("Beli :")
-    
-    spawn(function()
-        while wait() do
-            pcall(function()
-                localbeli:Set("Beli :".." "..game:GetService("Players").LocalPlayer.Data.Beli.Value)
-            end)
-        end
-    end)
-    local localfrag = Qwe:AddLabel("Fragment")
-    
-    spawn(function()
-        while wait() do
-            pcall(function()
-                localfrag:Set("Fragments :".." "..game:GetService("Players").LocalPlayer.Data.Fragments.Value)
-            end)
-        end
-    end)
-
-Qwe:AddSeperator("Status Train V4")
-
-local bL = Qwe:AddLabel("Ancient One : " .. tostring(CheckAcientOneStatus()))
-local bPl = Qwe:AddLabel("Train v4 Status : " .. tostring(CheckAcientOneStatusTrain()))
+local bPl = Qwe:AddLabel("Train v4 : " .. tostring(CheckAcientOneStatusTrain()))
 
 Qwe:AddSeperator("Status Island")
 if World3 then
@@ -4457,7 +4874,23 @@ spawn(function()
 end
     Froz3nIsland = Qwe:AddLabel("Frozen Island : Only Third Sea")
 
+    if World3 then
+spawn(function()
+    pcall(function()
+    while wait() do
+        if game.Workspace._WorldOrigin.Locations:FindFirstChild('Prehistoric Island') then
+            PrehistoricIsland:Set('Prehistoric Island : 🟢')
+        else
+            PrehistoricIsland:Set('Prehistoric Island : 🔴')
+        end
+    end
+    end)
+    end)
+end
+    PrehistoricIsland = Qwe:AddLabel("Prehistoric Island : Only Third Sea")
+
     Qwe:AddSeperator("Status Moon")
+
 local FMz = Qwe:AddLabel("Full Moon Phase : ")
  if World3 or world2 then
  task.spawn(function()
@@ -4480,6 +4913,8 @@ local FMz = Qwe:AddLabel("Full Moon Phase : ")
          end
  end)
 end
+
+
 local FullM00n = Qwe:AddLabel("Time : " .. function8() .. " | ".. CheckMoon() .. " | " .. function7())
 
 spawn(function()
@@ -4488,6 +4923,314 @@ spawn(function()
                 end
             end)
 
+    Qwe:AddSeperator("Legendary Item")
+--[[
+local function IsItemHeldByPlayer(itemName)
+    for _, player in pairs(game.Players:GetPlayers()) do
+        local character = player.Character
+        if character and character:FindFirstChild(itemName) then
+            return true
+        end
+    end
+    return false
+end
+
+spawn(function()
+    while wait(5) do
+        if IsItemHeldByPlayer("God's Chalice") then
+            NotifyItemFound_Chalice:Set("God's Chalice : 🟢")
+        else
+            NotifyItemFound_Chalice:Set("God's Chalice : 🔴")
+        end
+
+        if IsItemHeldByPlayer("Fish of Darkness") then
+            NotifyItemFound_Fish:Set("Fish of Darkness : 🟢")
+        else
+            NotifyItemFound_Fish:Set("Fish of Darkness : 🔴")
+        end
+    end
+end)
+
+    NotifyItemFound_Chalice = Qwe:AddLabel("God's Chalice : 🔴")
+    NotifyItemFound_Fish = Qwe:AddLabel("Fish of Darkness : 🔴")
+]]
+local function IsItemHeldByPlayer(itemName)
+    for _, player in pairs(game.Players:GetPlayers()) do
+        local character = player.Character
+        local backpack = player:FindFirstChild("Backpack")
+
+        if (character and character:FindFirstChild(itemName)) or (backpack and backpack:FindFirstChild(itemName)) then
+            return true
+        end
+    end
+    return false
+end
+
+spawn(function()
+    while wait(5) do
+        if IsItemHeldByPlayer("God's Chalice") then
+            NotifyItemFound_Chalice:Set("God's Chalice : 🟢")
+        else
+            NotifyItemFound_Chalice:Set("God's Chalice : 🔴")
+        end
+
+        if IsItemHeldByPlayer("Fish of Darkness") then
+            NotifyItemFound_Fish:Set("Fish of Darkness : 🟢")
+        else
+            NotifyItemFound_Fish:Set("Fish of Darkness : 🔴")
+        end
+    end
+end)
+
+NotifyItemFound_Chalice = Qwe:AddLabel("God's Chalice : 🔴")
+NotifyItemFound_Fish = Qwe:AddLabel("Fish of Darkness : 🔴")
+
+    spawn(function()
+        pcall(function()
+            while wait() do
+                if game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("LegendarySwordDealer", "1") then
+                    LegendSwords:Set("Legendary Sword : Shisui")
+                elseif game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("LegendarySwordDealer","2") then
+                    LegendSwords:Set("Legendary Sword : Wando")
+                elseif game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("LegendarySwordDealer","3") then
+                    LegendSwords:Set("Legendary Sword : Saddi")
+                else
+                    LegendSwords:Set("Legendary Sword : 🔴")
+                end
+            end
+        end)
+       end)
+       
+    LegendSwords = Qwe:AddLabel("Legendary Sword : 🔴")
+    ColorHaki = Qwe:AddLabel("Dealer Haki : 🔴")
+
+if World1 then
+Qwe:AddSeperator("Status Boss First Sea")
+
+Qwe:AddLabel("Boss Quest And Item")
+
+local BossSpawn14 = Qwe:AddLabel("Name Boss : Only First Sea")
+local BossSpawn15 = Qwe:AddLabel("Name Boss : Only First Sea")
+local BossSpawn16 = Qwe:AddLabel("Name Boss : Only First Sea")
+local BossSpawn17 = Qwe:AddLabel("Name Boss : Only First Sea")
+local BossSpawn18 = Qwe:AddLabel("Name Boss : Only First Sea")
+local BossSpawn19 = Qwe:AddLabel("Name Boss : Only First Sea")
+local BossSpawn20 = Qwe:AddLabel("Name Boss : Only First Sea")
+local BossSpawn21 = Qwe:AddLabel("Name Boss : Only First Sea")
+local BossSpawn22 = Qwe:AddLabel("Name Boss : Only First Sea")
+local BossSpawn23 = Qwe:AddLabel("Name Boss : Only First Sea")
+local BossSpawn24 = Qwe:AddLabel("Name Boss : Only First Sea")
+local BossSpawn25 = Qwe:AddLabel("Name Boss : Only First Sea")
+local BossSpawn26 = Qwe:AddLabel("Name Boss : Only First Sea")
+
+
+if World1 then
+    spawn(function()
+        while wait() do
+            pcall(function()
+                local enemies = game:GetService("Workspace").Enemies
+                local bosses = {
+                    {label = BossSpawn14, name = "The Gorilla King"},
+                    {label = BossSpawn15, name = "Bobby"},
+                    {label = BossSpawn16, name = "Yeti"},
+                    {label = BossSpawn17, name = "Mob Leader"},
+                    {label = BossSpawn18, name = "Vice Admiral"},
+                    {label = BossSpawn19, name = "Warden"},
+                    {label = BossSpawn20, name = "Chief Warden"},
+                    {label = BossSpawn21, name = "Swan"},
+                    {label = BossSpawn22, name = "Magma Admiral"},
+                    {label = BossSpawn23, name = "Fishman Lord"},
+                    {label = BossSpawn24, name = "Warden of Sky"},
+                    {label = BossSpawn25, name = "Cyborg"},
+                    {label = BossSpawn26, name = "Saber Expert"}
+                }
+
+                for _, boss in pairs(bosses) do
+                    local replicated = game:GetService("ReplicatedStorage"):FindFirstChild(boss.name)
+                    local workspaceBoss = enemies:FindFirstChild(boss.name)
+                    if replicated or workspaceBoss then
+                        boss.label:Set("Name Boss : " .. boss.name .. " | 🟢")
+                    else
+                        boss.label:Set("Name Boss : " .. boss.name .. " | 🔴")
+                    end
+                end
+            end)
+        end
+    end)
+end
+end
+
+if World2 then
+Qwe:AddSeperator("Status Boss Second Sea")
+Qwe:AddLabel("Boss Quest And Item")
+
+local BossSpawn8 = Qwe:AddLabel("Name Boss : Only Second Sea")
+local BossSpawn9 = Qwe:AddLabel("Name Boss : Only Second Sea")
+local BossSpawn10 = Qwe:AddLabel("Name Boss : Only Second Sea")
+local BossSpawn11 = Qwe:AddLabel("Name Boss : Only Second Sea")
+local BossSpawn12 = Qwe:AddLabel("Name Boss : Only Second Sea")
+local BossSpawn13 = Qwe:AddLabel("Name Boss : Only Second Sea")
+
+
+if World2 then
+    spawn(function()
+        while wait() do
+            pcall(function()
+                local enemies = game:GetService("Workspace").Enemies
+                local bosses = {
+                    {label = BossSpawn8, name = "Diamond"},
+                    {label = BossSpawn9, name = "Jeremy"},
+                    {label = BossSpawn10, name = "Fajita"},
+                    {label = BossSpawn11, name = "Don Swan"},
+                    {label = BossSpawn12, name = "Smoke Admiral"},
+                    {label = BossSpawn13, name = "Cursed Captain"}
+                }
+
+                for _, boss in pairs(bosses) do
+                    local replicated = game:GetService("ReplicatedStorage"):FindFirstChild(boss.name)
+                    local workspaceBoss = enemies:FindFirstChild(boss.name)
+                    if replicated or workspaceBoss then
+                        boss.label:Set("Name Boss : " .. boss.name .. " | 🟢")
+                    else
+                        boss.label:Set("Name Boss : " .. boss.name .. " | 🔴")
+                    end
+                end
+            end)
+        end
+    end)
+end
+end
+
+if World3 then
+Qwe:AddSeperator("Status Boss Third Sea")
+Qwe:AddLabel("Boss Quest And Item")
+
+local BossSpawn = Qwe:AddLabel("Name Boss : Only Third Sea")
+local BossSpawn2 = Qwe:AddLabel("Name Boss : Only Third Sea")
+local BossSpawn3 = Qwe:AddLabel("Name Boss : Only Third Sea")
+local BossSpawn4 = Qwe:AddLabel("Name Boss : Only Third Sea")
+local BossSpawn5 = Qwe:AddLabel("Name Boss : Only Third Sea")
+local BossSpawn6 = Qwe:AddLabel("Name Boss : Only Third Sea")
+local BossSpawn7 = Qwe:AddLabel("Name Boss : Only Third Sea")
+
+if World3 then
+    spawn(function()
+        while wait() do
+            pcall(function()
+                local enemies = game:GetService("Workspace").Enemies
+                local bosses = {
+                    {label = BossSpawn, name = "Stone Boss"},
+                    {label = BossSpawn2, name = "Island Empress"},
+                    {label = BossSpawn3, name = "Kilo Admiral"},
+                    {label = BossSpawn4, name = "Captain Elephant"},
+                    {label = BossSpawn5, name = "Beautiful Pirate"},
+                    {label = BossSpawn6, name = "Cake Queen"},
+                    {label = BossSpawn7, name = "Dough King"}
+                }
+
+                for _, boss in pairs(bosses) do
+                    local replicated = game:GetService("ReplicatedStorage"):FindFirstChild(boss.name)
+                    local workspaceBoss = enemies:FindFirstChild(boss.name)
+                    if replicated or workspaceBoss then
+                        boss.label:Set("Name Boss : " .. boss.name .. " | 🟢")
+                    else
+                        boss.label:Set("Name Boss : " .. boss.name .. " | 🔴")
+                    end
+                end
+            end)
+        end
+    end)
+end
+end
+
+
+Qwe:AddSeperator("Status Server & Player")
+
+            local Time1 = Qwe:AddLabel("Run Time Script")
+            function UpdateTime()
+            local GameTime = math.floor(workspace.DistributedGameTime+0.5)
+            local Hour = math.floor(GameTime/(60^2))%24
+            local Minute = math.floor(GameTime/(60^1))%60
+            local Second = math.floor(GameTime/(60^0))%60
+            Time1:Set("GameTime : Hours : "..Hour.." Min : "..Minute.." Sec : "..Second)
+            end
+            
+            spawn(function()
+            while task.wait() do
+            pcall(function()
+            UpdateTime()
+            end)
+            end
+            end)
+            
+            local Client = Qwe:AddLabel("Client")
+            
+            function UpdateClient()
+            local Fps = workspace:GetRealPhysicsFPS()
+            Client:Set("Fps : "..Fps)
+            end
+            
+            spawn(function()
+            while true do wait(.1)
+            UpdateClient()
+            end
+            end)
+            
+            local Client1 = Qwe:AddLabel("Client")
+            
+            function UpdateClient1()
+            local Ping = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValueString()
+            Client1:Set("Ping : "..Ping)
+            end
+            
+            spawn(function()
+            while true do wait(.1)
+            UpdateClient1()
+            end
+            end)
+            
+            Qwe:AddLabel("Executor : ".. identifyexecutor())
+            Qwe:AddLabel("Name : ".. game.Players.LocalPlayer.Name)
+            
+            local locallv = Qwe:AddLabel("Level :")
+                
+                spawn(function()
+                    while wait() do
+                        pcall(function()
+                            locallv:Set("Level :".." "..game:GetService("Players").LocalPlayer.Data.Level.Value)
+                        end)
+                    end
+                end)
+                
+                local localrace = Qwe:AddLabel("Race :")
+                
+                spawn(function()
+                    while wait() do
+                        pcall(function()
+                            localrace:Set("Race :".." "..game:GetService("Players").LocalPlayer.Data.Race.Value)
+                        end)
+                    end
+                end)
+                
+                local localbeli = Qwe:AddLabel("Beli :")
+                
+                spawn(function()
+                    while wait() do
+                        pcall(function()
+                            localbeli:Set("Beli :".." "..game:GetService("Players").LocalPlayer.Data.Beli.Value)
+                        end)
+                    end
+                end)
+                local localfrag = Qwe:AddLabel("Fragment")
+                
+                spawn(function()
+                    while wait() do
+                        pcall(function()
+                            localfrag:Set("Fragments :".." "..game:GetService("Players").LocalPlayer.Data.Fragments.Value)
+                        end)
+                    end
+                end)
+--[[
             Qwe:AddSeperator("Status Quest")
 
             local Bartilo_Quest = Qwe:AddLabel("Bartilo Quest : 🔴")
@@ -4628,7 +5371,7 @@ spawn(function()
                     end)
                 end
             end)
-
+--]]
 ---- Teks halaman utama
 Main:AddSeperator("Redeem Codes")
     
@@ -4651,7 +5394,30 @@ Main:AddSeperator("Redeem Codes")
         "SUB2FER999",
         "MAGICBIS",
         "TY_FOR_WATCHING",
-        "STARCODEHEO"
+        "STARCODEHEO",
+        "UPD16", --baru
+        "2BILLION",
+        "UPD15",
+        "StrawHatMaine",
+        "Sub2OfficialNoobie",
+        "SUB2NOOBMASTER123",
+        "Sub2Daigrock",
+        "Axiore",
+        "TantaiGaming",
+        "STRAWHATMAINE",
+        "GAMERROBOT_YT",
+        "EXP_5B",
+        "RESET_5B",
+        "KittGaming",
+        "Enyu_is_Pro",
+        "Sub2Fer999",
+        "Bluxxy",
+        "Magicbus",
+        "fudd10_v2 ",
+        "Starcodeheo",
+        "3BVISITS",
+        "1MLIKES_RESET",
+        "2BILLION"
     }
     
     Main:AddButton("Redeem All Codes",function()
@@ -4717,9 +5483,9 @@ task.spawn(function()
 		end)
 	end
     end)
-
+--[[
 local AttackList = {"0", "0.1", "0.15", "0.155", "0.16", "0.165", "0.17", "0.175", "0.18", "0.185"}
-_G.FastAttackDelay = "0.175"
+_G.FastAttackDelay = "0.18"
 Main:AddDropdown("Fast Attack Delay", AttackList,function(MakoGay)
     _G.FastAttackDelay = MakoGay
 end)
@@ -4756,8 +5522,8 @@ spawn(function()
 end)
 
 local Client = game.Players.LocalPlayer
-local STOP = require(Client.PlayerScripts.CombatFramework.Particle)
-local STOPRL = require(game:GetService("ReplicatedStorage").CombatFramework.RigLib)
+local STOP = require(Client.PlayerScripts.CombatController.Particle)
+local STOPRL = require(game:GetService("ReplicatedStorage").CombatController.RigLib)
 spawn(function()
     while task.wait() do
         pcall(function()
@@ -4783,8 +5549,8 @@ spawn(function()
 end)
 
 function GetBladeHit()
-local CombatFrameworkLib = debug.getupvalues(require(game:GetService("Players").LocalPlayer.PlayerScripts.CombatFramework))
-local CmrFwLib = CombatFrameworkLib[2]
+local CombatControllerLib = debug.getupvalues(require(game:GetService("Players").LocalPlayer.PlayerScripts.CombatController))
+local CmrFwLib = CombatControllerLib[2]
 local p13 = CmrFwLib.activeController
 local weapon = p13.blades[1]
 if not weapon then 
@@ -4796,11 +5562,11 @@ end
 return weapon
 end
 function AttackHit()
-local CombatFrameworkLib = debug.getupvalues(require(game:GetService("Players").LocalPlayer.PlayerScripts.CombatFramework))
-local CmrFwLib = CombatFrameworkLib[2]
+local CombatControllerLib = debug.getupvalues(require(game:GetService("Players").LocalPlayer.PlayerScripts.CombatController))
+local CmrFwLib = CombatControllerLib[2]
 local plr = game.Players.LocalPlayer
 for i = 1, 1 do
-    local bladehit = require(game.ReplicatedStorage.CombatFramework.RigLib).getBladeHits(plr.Character,{plr.Character.HumanoidRootPart},60)
+    local bladehit = require(game.ReplicatedStorage.CombatController.RigLib).getBladeHits(plr.Character,{plr.Character.HumanoidRootPart},60)
     local cac = {}
     local hash = {}
     for k, v in pairs(bladehit) do
@@ -4838,7 +5604,7 @@ while wait(.1) do
     end
 end
 end)
-
+]]
        Main:AddToggle("Bypass TP",BypassTP,function(value)
         BypassTP = value
     end)
@@ -4875,10 +5641,7 @@ spawn(function()
     end
   end
 end)
-
-Main:AddToggle("Super Fast Attack ",true,function(value)
-        _G.FastAttack = value
-    end)      
+  
 
    Main:AddSeperator("Farm Level")
 
@@ -4951,15 +5714,15 @@ elseif World3 then
  tableMon = {"Pirate Millionaire","Dragon Crew Warrior","Dragon Crew Archer","Female Islander","Giant Islander","Marine Commodore","Marine Rear Admiral","Fishman Raider","Fishman Captain","Forest Pirate","Mythological Pirate","Jungle Pirate","Musketeer Pirate","Reborn Skeleton","Living Zombie","Demonic Soul","Posessed Mummy","Peanut Scout","Peanut President","Ice Cream Chef","Ice Cream Commander","Cookie Crafter","Cake Guard","Baking Staff","Head Baker","Cocoa Warrior","Chocolate Bar Battler","Sweet Thief","Candy Rebel","Candy Pirate","Snow Demon","Isle Outlaw","Island Boy","Sun-kissed Warrior","Isle Champion"}
 end
    
-    Main:AddToggle("Auto Farm Level",_G.AutoFarm,function(value)
-        _G.AutoFarm = value
+    Main:AddToggle("Auto Farm Level",_G.AutoFarmL,function(value)
+        _G.AutoFarmL = value
         StopTween(_G.AutoFarm)
         saveSettings()
     end)
-    
+
     spawn(function()
         while wait() do
-            if _G.AutoFarm then
+            if _G.AutoFarmL then
                 pcall(function()
                     local QuestTitle = game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text
                     CheckQuest()
@@ -4982,12 +5745,11 @@ end
 						game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest",NameQuest,LevelQuest)
                     end
                     elseif game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == true then
-                        -- Sun-Kissed Warrior Function Farm Level
-                        if string.find(game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text, "kissed") then
+                        if string.find(game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text, "skull") then
                             for i,v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
-                                if string.find(v.Name,"kissed Warrior") then
+                                if string.find(v.Name,"Skull Slayer") then
                                     if v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
-                                        if string.find(game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text, NameMon) then
+                                        if string.find(game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text, "Skull Slayer") then
                                             repeat task.wait()
                                                 EquipWeapon(_G.SelectWeapon)
                                                 AutoHaki()                                            
@@ -4998,15 +5760,14 @@ end
                                                 v.Head.CanCollide = false
                                                 v.HumanoidRootPart.Size = Vector3.new(70,70,70)
                                                 StartMagnet = true
-                                                game:GetService'VirtualUser':CaptureController()
-                                                game:GetService'VirtualUser':Button1Down(Vector2.new(1280, 672))
+                                                module:attack()
                                             until not _G.AutoFarm or v.Humanoid.Health <= 0 or not v.Parent or game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == false
                                         else
                                             StartMagnet = false
                                             game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("AbandonQuest")
                                         end
                                     end
-                                elseif string.find(v.Name,"kissed Warrior") == nil then
+                                elseif string.find(v.Name,"Skull Slayer") == nil then
                                     TP1(CFrameMon)
                                     StartMagnet = false
                                     if game:GetService("ReplicatedStorage"):FindFirstChild(Mon) then
@@ -5015,7 +5776,6 @@ end
                                 end
                             end
                         else
-                            -- For Other Farm Level Except Sun Kissed Warrior
                             if game:GetService("Workspace").Enemies:FindFirstChild(Mon) then
                                 for i,v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
                                     if v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
@@ -5031,8 +5791,7 @@ end
                                                     v.Head.CanCollide = false
                                                     v.HumanoidRootPart.Size = Vector3.new(70,70,70)
                                                     StartMagnet = true
-                                                    game:GetService'VirtualUser':CaptureController()
-                                                    game:GetService'VirtualUser':Button1Down(Vector2.new(1280, 672))
+                                                    module:attack()
                                                 until not _G.AutoFarm or v.Humanoid.Health <= 0 or not v.Parent or game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == false
                                             else
                                                 StartMagnet = false
@@ -5076,32 +5835,456 @@ spawn(function()
 			               	end
 			                HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
 			                v.HumanoidRootPart.CanCollide = false
-			                Fastattack = true
+			                StartMagnet = true
+                            Fastattack = true
 			                v.HumanoidRootPart.Size = Vector3.new(60, 60, 60)
-						    game:GetService("VirtualUser"):CaptureController()
-				       	    game:GetService("VirtualUser"):Button1Down(Vector2.new(1280, 672), game.Workspace.CurrentCamera.CFrame)
-				       	    AutoFarmNearestMagnet = true
+						    module:attack()
+				       	    --AutoFarmNearestMagnet = true
 				       	    PosMon = v.HumanoidRootPart.CFrame
 			            until not _G.AutoFarmNearest or not v.Parent or v.Humanoid.Health <= 0 
-			            AutoFarmNearestMagnet = false
-			            Fastattack = false
+			            --AutoFarmNearestMagnet = false
+			            StartMagnet = false
+                        Fastattack = false
 			        end
 			    end
 			end
 		end
 	end
     end)
-  
-    Main:AddLabel("Chest Farm")
 
-Main:AddToggle("Auto Stop Legendary Items",_G.StopItemsChest,function(vu)
+    Main:AddSeperator("Farm Level Mastery")
+    
+    Misc:AddDropdown("Select Farm : ",{"Normal","Cake Prince","Bone"},function(value)
+        _G.SelectMastery = value
+    end)
+
+    Main:AddToggle("Blox Fruit Mastery",_G.AutoFarmFruitMastery,function(value)
+        _G.AutoFarmFruitMastery = value
+        StopTween(_G.AutoFarmFruitMastery)
+        if _G.AutoFarmFruitMastery == false then
+            UseSkill = false 
+        end
+    end)
+    
+    spawn(function()
+        while wait() do
+            if _G.AutoFarmFruitMastery then
+                pcall(function()
+                    local QuestTitle = game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text
+                    if not string.find(QuestTitle, NameMon) then
+                        Magnet = false
+                        UseSkill = false
+                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("AbandonQuest")
+                    end
+                    if game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == false then
+                        StartMasteryFruitMagnet = false
+                        UseSkill = false
+                        CheckQuest()
+                        repeat wait()
+                            TP1(CFrameQuest)
+                        until (CFrameQuest.Position - game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 3 or not _G.AutoFarmFruitMastery
+                        if (CFrameQuest.Position - game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 5 then
+                            wait(0.1)
+                            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest",NameQuest,LevelQuest)
+                            wait(0.1)
+                        end
+                    elseif game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == true then
+                        CheckQuest()
+                        if game:GetService("Workspace").Enemies:FindFirstChild(Mon) then
+                            for i,v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+                                if v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+                                    if v.Name == Mon then
+                                        if string.find(game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text, NameMon) then
+                                            HealthMs = v.Humanoid.MaxHealth * _G.Kill_At/100
+                                            repeat task.wait()
+                                                if v.Humanoid.Health <= HealthMs then
+                                                    AutoHaki()
+                                                    EquipWeapon(game:GetService("Players").LocalPlayer.Data.DevilFruit.Value)
+                                                    TP1(v.HumanoidRootPart.CFrame * CFrame.new(0,10,0))
+                                                    v.HumanoidRootPart.CanCollide = false
+                                                    PosMonMasteryFruit = v.HumanoidRootPart.CFrame
+                                                    v.Humanoid.WalkSpeed = 2
+                                                    v.Head.CanCollide = false
+                                                    UseSkill = true
+                                                else           
+                                                    UseSkill = false 
+                                                    AutoHaki()
+                                                    EquipWeapon(_G.SelectWeapon)
+                                                    TP1(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
+                                                    v.HumanoidRootPart.CanCollide = false
+                                                    v.HumanoidRootPart.Size = Vector3.new(50,50,50)
+                                                    PosMonMasteryFruit = v.HumanoidRootPart.CFrame
+                                                    v.Humanoid.WalkSpeed = 2
+                                                    v.Head.CanCollide = false
+                                                end
+                                                StartMasteryFruitMagnet = true
+                                                game:GetService'VirtualUser':CaptureController()
+                                                game:GetService'VirtualUser':Button1Down(Vector2.new(1280, 672))
+                                            until not _G.AutoFarmFruitMastery or v.Humanoid.Health <= 0 or not v.Parent or game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == false
+                                        else
+                                            UseSkill = false
+                                            StartMasteryFruitMagnet = false
+                                            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("AbandonQuest")
+                                        end
+                                    end
+                                end
+                            end
+                        else
+                            TP1(CFrameMon)
+                            StartMasteryFruitMagnet = false   
+                            UseSkill = false 
+                            local Mob = game:GetService("ReplicatedStorage"):FindFirstChild(Mon) 
+                            if Mob then
+                                TP1(Mob.HumanoidRootPart.CFrame * CFrame.new(0,0,10))
+                            else
+                                if game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.CFrame.Y <= 1 then
+                                    game:GetService("Players").LocalPlayer.Character.Humanoid.Jump = true
+                                    task.wait()
+                                    game:GetService("Players").LocalPlayer.Character.Humanoid.Jump = false
+                                end
+                            end
+                        end
+                    end
+                end)
+            end
+        end
+    end)
+    
+    spawn(function()
+        while wait() do
+            if UseSkill then
+                pcall(function()
+                    CheckQuest()
+                    for i,v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+                        if game:GetService("Players").LocalPlayer.Character:FindFirstChild(game:GetService("Players").LocalPlayer.Data.DevilFruit.Value) then
+                            MasBF = game:GetService("Players").LocalPlayer.Character[game:GetService("Players").LocalPlayer.Data.DevilFruit.Value].Level.Value
+                        elseif game:GetService("Players").LocalPlayer.Backpack:FindFirstChild(game:GetService("Players").LocalPlayer.Data.DevilFruit.Value) then
+                            MasBF = game:GetService("Players").LocalPlayer.Backpack[game:GetService("Players").LocalPlayer.Data.DevilFruit.Value].Level.Value
+                        end
+                        if game:GetService("Players").LocalPlayer.Character:FindFirstChild("Dragon-Dragon") then                      
+                            if _G.SkillZ then
+                                local args = {
+                                    [1] = PosMonMasteryFruit.Position
+                                }
+                                game:GetService("Players").LocalPlayer.Character[game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Tool").Name].RemoteEvent:FireServer(unpack(args))                        
+                                game:GetService("VirtualInputManager"):SendKeyEvent(true,"Z",false,game)
+                                game:GetService("VirtualInputManager"):SendKeyEvent(false,"Z",false,game)
+                            end
+                            if _G.SkillX then          
+                                local args = {
+                                    [1] = PosMonMasteryFruit.Position
+                                }
+                                game:GetService("Players").LocalPlayer.Character[game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Tool").Name].RemoteEvent:FireServer(unpack(args))               
+                                game:GetService("VirtualInputManager"):SendKeyEvent(true,"X",false,game)
+                                game:GetService("VirtualInputManager"):SendKeyEvent(false,"X",false,game)
+                            end
+                            if _G.SkillC then
+                                local args = {
+                                    [1] = PosMonMasteryFruit.Position
+                                }
+                                game:GetService("Players").LocalPlayer.Character[game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Tool").Name].RemoteEvent:FireServer(unpack(args))                          
+                                game:GetService("VirtualInputManager"):SendKeyEvent(true,"C",false,game)
+                                wait(2)
+                                game:GetService("VirtualInputManager"):SendKeyEvent(false,"C",false,game)
+                            end
+                        elseif game:GetService("Players").LocalPlayer.Character:FindFirstChild("Venom-Venom") then   
+                            if _G.SkillZ then
+                                local args = {
+                                    [1] = PosMonMasteryFruit.Position
+                                }
+                                game:GetService("Players").LocalPlayer.Character[game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Tool").Name].RemoteEvent:FireServer(unpack(args))                        
+                                game:GetService("VirtualInputManager"):SendKeyEvent(true,"Z",false,game)
+                                game:GetService("VirtualInputManager"):SendKeyEvent(false,"Z",false,game)
+                            end
+                            if _G.SkillX then        
+                                local args = {
+                                    [1] = PosMonMasteryFruit.Position
+                                }
+                                game:GetService("Players").LocalPlayer.Character[game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Tool").Name].RemoteEvent:FireServer(unpack(args))               
+                                game:GetService("VirtualInputManager"):SendKeyEvent(true,"X",false,game)
+                                game:GetService("VirtualInputManager"):SendKeyEvent(false,"X",false,game)
+                            end
+                            if _G.SkillC then 
+                                local args = {
+                                    [1] = PosMonMasteryFruit.Position
+                                }
+                                game:GetService("Players").LocalPlayer.Character[game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Tool").Name].RemoteEvent:FireServer(unpack(args))                          
+                                game:GetService("VirtualInputManager"):SendKeyEvent(true,"C",false,game)
+                                wait(2)
+                                game:GetService("VirtualInputManager"):SendKeyEvent(false,"C",false,game)
+                            end
+                        elseif game:GetService("Players").LocalPlayer.Character:FindFirstChild("Human-Human: Buddha") then
+                            if _G.SkillZ and game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.Size == Vector3.new(2, 2.0199999809265, 1) then
+                                local args = {
+                                    [1] = PosMonMasteryFruit.Position
+                                }
+                                game:GetService("Players").LocalPlayer.Character[game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Tool").Name].RemoteEvent:FireServer(unpack(args))                         
+                                game:GetService("VirtualInputManager"):SendKeyEvent(true,"Z",false,game)
+                                game:GetService("VirtualInputManager"):SendKeyEvent(false,"Z",false,game)
+                            end
+                            if _G.SkillX then
+                                local args = {
+                                    [1] = PosMonMasteryFruit.Position
+                                }
+                                game:GetService("Players").LocalPlayer.Character[game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Tool").Name].RemoteEvent:FireServer(unpack(args))                           
+                                game:GetService("VirtualInputManager"):SendKeyEvent(true,"X",false,game)
+                                game:GetService("VirtualInputManager"):SendKeyEvent(false,"X",false,game)
+                            end
+                            if _G.SkillC then
+                                local args = {
+                                    [1] = PosMonMasteryFruit.Position
+                                }
+                                game:GetService("Players").LocalPlayer.Character[game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Tool").Name].RemoteEvent:FireServer(unpack(args))                           
+                                game:GetService("VirtualInputManager"):SendKeyEvent(true,"C",false,game)
+                                game:GetService("VirtualInputManager"):SendKeyEvent(false,"C",false,game)
+                            end
+                            if _G.SkillV then
+                                local args = {
+                                    [1] = PosMonMasteryFruit.Position
+                                }
+                                game:GetService("Players").LocalPlayer.Character[game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Tool").Name].RemoteEvent:FireServer(unpack(args))
+                                game:GetService("VirtualInputManager"):SendKeyEvent(true,"V",false,game)
+                                game:GetService("VirtualInputManager"):SendKeyEvent(false,"V",false,game)
+                            end
+                        elseif game:GetService("Players").LocalPlayer.Character:FindFirstChild(game:GetService("Players").LocalPlayer.Data.DevilFruit.Value) then
+                            if _G.SkillZ then 
+                                local args = {
+                                    [1] = PosMonMasteryFruit.Position
+                                }
+                                game:GetService("Players").LocalPlayer.Character[game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Tool").Name].RemoteEvent:FireServer(unpack(args))                         
+                                game:GetService("VirtualInputManager"):SendKeyEvent(true,"Z",false,game)
+                                game:GetService("VirtualInputManager"):SendKeyEvent(false,"Z",false,game)
+                            end
+                            if _G.SkillX then
+                                local args = {
+                                    [1] = PosMonMasteryFruit.Position
+                                }
+                                game:GetService("Players").LocalPlayer.Character[game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Tool").Name].RemoteEvent:FireServer(unpack(args))                           
+                                game:GetService("VirtualInputManager"):SendKeyEvent(true,"X",false,game)
+                                game:GetService("VirtualInputManager"):SendKeyEvent(false,"X",false,game)
+                            end
+                            if _G.SkillC then
+                                local args = {
+                                    [1] = PosMonMasteryFruit.Position
+                                }
+                                game:GetService("Players").LocalPlayer.Character[game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Tool").Name].RemoteEvent:FireServer(unpack(args))                           
+                                game:GetService("VirtualInputManager"):SendKeyEvent(true,"C",false,game)
+                                game:GetService("VirtualInputManager"):SendKeyEvent(false,"C",false,game)
+                            end
+                            if _G.SkillV then
+                                local args = {
+                                    [1] = PosMonMasteryFruit.Position
+                                }
+                                game:GetService("Players").LocalPlayer.Character[game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Tool").Name].RemoteEvent:FireServer(unpack(args))
+                                game:GetService("VirtualInputManager"):SendKeyEvent(true,"V",false,game)
+                                game:GetService("VirtualInputManager"):SendKeyEvent(false,"V",false,game)
+                            end
+                        end
+                    end
+                end)
+            end
+        end
+    end)
+    
+    spawn(function()
+        game:GetService("RunService").RenderStepped:Connect(function()
+            pcall(function()
+                if UseSkill then
+                    for i,v in pairs(game:GetService("Players").LocalPlayer.PlayerGui.Notifications:GetChildren()) do
+                        if v.Name == "NotificationTemplate" then
+                            if string.find(v.Text,"Skill locked!") then
+                                v:Destroy()
+                            end
+                        end
+                    end
+                end
+            end)
+        end)
+    end)
+    
+    spawn(function()
+        pcall(function()
+            game:GetService("RunService").RenderStepped:Connect(function()
+                if UseSkill then
+                    local args = {
+                        [1] = PosMonMasteryFruit.Position
+                    }
+                    game:GetService("Players").LocalPlayer.Character[game:GetService("Players").LocalPlayer.Data.DevilFruit.Value].RemoteEvent:FireServer(unpack(args))
+                end
+            end)
+        end)
+    end)
+    
+    Main:AddToggle("Auto Farm Gun Mastery",_G.AutoFarmGunMastery,function(value)
+        _G.AutoFarmGunMastery = value
+        StopTween(_G.AutoFarmGunMastery)
+        if _G.AutoFarmGunMastery == false then
+            UseSkill = false 
+        end
+    end)
+    
+    spawn(function()
+        while wait() do
+            if _G.AutoFarmGunMastery then
+                pcall(function()
+                    local QuestTitle = game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text
+                    if not string.find(QuestTitle, NameMon) then
+                        Magnet = false
+                        UseSkill = false
+                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("AbandonQuest")
+                    end
+                    if game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == false then
+                        StartMasteryGunMagnet = false
+                        UseSkill = false
+                        CheckQuest()
+                        repeat wait()
+                            TP1(CFrameQuest)
+                        until (CFrameQuest.Position - game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 3 or not _G.AutoFarmGunMastery
+                        if (CFrameQuest.Position - game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 5 then
+                            wait(0.1)
+                            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest",NameQuest,LevelQuest)
+                            wait(0.1)
+                        end
+                    elseif game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == true then
+                        CheckQuest()
+                        if game:GetService("Workspace").Enemies:FindFirstChild(Mon) then
+                            for i,v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+                                if v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+                                    if v.Name == Mon then
+                                        if string.find(game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text, NameMon) then
+                                            HealthMs = v.Humanoid.MaxHealth * _G.Kill_At/100
+                                            repeat task.wait()
+                                                if v.Humanoid.Health <= HealthMs then
+                                                    AutoHaki()
+                                                    EquipWeapon(SelectWeaponGun)
+                                                    TP1(v.HumanoidRootPart.CFrame * CFrame.new(0,10,0))
+                                                    v.HumanoidRootPart.CanCollide = false
+                                                    PosMonMasteryGun = v.HumanoidRootPart.CFrame
+                                                    v.Humanoid.WalkSpeed = 2
+                                                    v.Head.CanCollide = false
+                                                    UseSkill = true
+                                                else           
+                                                    UseSkill = false 
+                                                    AutoHaki()
+                                                    EquipWeapon(_G.SelectWeapon)
+                                                    TP1(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
+                                                    v.HumanoidRootPart.CanCollide = false
+                                                    v.HumanoidRootPart.Size = Vector3.new(50,50,50)
+                                                    PosMonMasteryGun= v.HumanoidRootPart.CFrame
+                                                    v.Humanoid.WalkSpeed = 2
+                                                    v.Head.CanCollide = false
+                                                end
+                                                StartMasteryGunMagnet = true
+                                                game:GetService'VirtualUser':CaptureController()
+                                                game:GetService'VirtualUser':Button1Down(Vector2.new(1280, 672))
+                                            until not _G.AutoFarmGunMastery or v.Humanoid.Health <= 0 or not v.Parent or game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == false
+                                        else
+                                            UseSkill = false
+                                            StartMasteryGunMagnet = false
+                                            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("AbandonQuest")
+                                        end
+                                    end
+                                end
+                            end
+                        else
+                            TP1(CFrameMon)
+                            StartMasteryGunMagnet = false   
+                            UseSkill = false 
+                            local Mob = game:GetService("ReplicatedStorage"):FindFirstChild(Mon) 
+                            if Mob then
+                                TP1(Mob.HumanoidRootPart.CFrame * CFrame.new(0,0,10))
+                            else
+                                if game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.CFrame.Y <= 1 then
+                                    game:GetService("Players").LocalPlayer.Character.Humanoid.Jump = true
+                                    task.wait()
+                                    game:GetService("Players").LocalPlayer.Character.Humanoid.Jump = false
+                                end
+                            end
+                        end
+                    end
+                end)
+            end
+        end
+    end) 
+    
+    spawn(function()
+        while wait() do
+            if UseSkill then
+                pcall(function()
+                    CheckQuest()
+                    if game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Tool") then
+                        local equippedGun = game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Tool")
+                        if equippedGun:IsA("Tool") and (equippedGun.ToolTip == "Gun" or equippedGun.Name == "Slingshot" or 
+                            equippedGun.Name == "Flintlock" or equippedGun.Name == "Musket" or 
+                            equippedGun.Name == "Acidum Rifle" or equippedGun.Name == "Bizarre Rifle" or 
+                            equippedGun.Name == "Cannon" or equippedGun.Name == "Refined Flintlock" or 
+                            equippedGun.Name == "Refined Musket" or equippedGun.Name == "Refined Slingshot" or 
+                            equippedGun.Name == "Bazooka" or equippedGun.Name == "Kabucha" or 
+                            equippedGun.Name == "Serpent Bow" or equippedGun.Name == "Soul Guitar") then
+    
+                            for i,v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+                                if v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Humanoid") and 
+                                   v.Humanoid.Health > 0 and v.Name == Mon then
+                                    
+                                    if _G.GunSkillZ then
+                                        local args = {
+                                            [1] = PosMonMasteryGun.Position
+                                        }
+                                        equippedGun.RemoteEvent:FireServer(unpack(args))
+                                        game:GetService("VirtualInputManager"):SendKeyEvent(true,"Z",false,game)
+                                        game:GetService("VirtualInputManager"):SendKeyEvent(false,"Z",false,game)
+                                    end
+                                    wait(0.1)
+                                    
+                                    if _G.GunSkillX then          
+                                        local args = {
+                                            [1] = PosMonMasteryGun.Position
+                                        }
+                                        equippedGun.RemoteEvent:FireServer(unpack(args))
+                                        game:GetService("VirtualInputManager"):SendKeyEvent(true,"X",false,game)
+                                        game:GetService("VirtualInputManager"):SendKeyEvent(false,"X",false,game)
+                                    end
+                                    wait(0.1)
+                                    break 
+                                end
+                            end
+                        end
+                    end
+                end)
+            end
+        end
+    end)
+
+    
+    spawn(function()
+        game:GetService("RunService").RenderStepped:Connect(function()
+            pcall(function()
+                if UseSkill then
+                    for i,v in pairs(game:GetService("Players").LocalPlayer.PlayerGui.Notifications:GetChildren()) do
+                        if v.Name == "NotificationTemplate" then
+                            if string.find(v.Text,"Skill locked!") then
+                                v:Destroy()
+                            end
+                        end
+                    end
+                end
+            end)
+        end)
+    end)
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  
+    Main:AddSeperator("Chest Farm")
+
+Main:AddToggle("Auto Stop Legendary Item",_G.StopItemsChest,function(vu)
     _G.StopItemsChest = vu
+    StopTween(_G.StopItemsChest)
 end)
     
     spawn(function()
         while wait() do
             pcall(function()
-                if _G.StopItemsChest or not AutoFarmChest then
+                if _G.StopItemsChest or AutoFarmChest then
                     if game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("God's Chalice") or game:GetService("Players").LocalPlayer.Backpack:FindFirstChild("Fist of Darkness") then
                         _G.ChestBypass = false
                         AutoFarmChest = false
@@ -5111,40 +6294,89 @@ end)
             end)
         end
     end)
+
+
+    Main:AddToggle("Auto Farm Chest | Safe", false, function(value)
+        AutoFarmChest = value
+        StopTween(AutoFarmChest)
+    end)
     
-Main:AddToggle("Auto Farm Chest | Safe ",false,function(value)
- AutoFarmChest = value
- _G.StopItemsChest = value
- StopTween(AutoFarmChest or _G.StopItemsChest)
- end)
- 
- _G.MagnitudeAdd = 0
+    _G.MagnitudeAdd = 0
+
+local function hasLegendaryItems()
+    local inventory = game.Players.LocalPlayer.Backpack:GetChildren()
+    local hasChallice = false
+    local hasFist = false
+    
+    for _, item in pairs(inventory) do
+        if item.Name == "God's Chalice" then hasChallice = true end
+        if item.Name == "Fist of Darkness" then hasFist = true end
+    end
+    
+    local character = game.Players.LocalPlayer.Character
+    if character then
+        for _, item in pairs(character:GetChildren()) do
+            if item.Name == "God's Chalice" then hasChallice = true end
+            if item.Name == "Fist of Darkness" then hasFist = true end
+        end
+    end
+    
+    return hasChallice and hasFist
+end
+
+local function autoJump()
+    local character = game.Players.LocalPlayer.Character
+    if character and character:FindFirstChild("Humanoid") then
+        character.Humanoid.Jump = true
+        wait(0.1)
+    end
+end
+
 spawn(function()
-	while wait() do 
-		if AutoFarmChest then
-			for i,v in pairs(game:GetService("Workspace"):GetChildren()) do 
-				if v.Name:find("Chest") then
-					if game:GetService("Workspace"):FindFirstChild(v.Name) then
-						if (v.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 5000+_G.MagnitudeAdd then
-							repeat wait()
-								if game:GetService("Workspace"):FindFirstChild(v.Name) then
-									HyperCahaya(v.CFrame)
-								end
-							until AutoFarmChest == false or not v.Parent
-							HyperCahaya(game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.CFrame)
-							_G.MagnitudeAdd = _G.MagnitudeAdd+1500
-							break
-						end
-					end
-				end
-			end
-		end
-	end
+    while wait() do
+        if AutoFarmChest then
+            if hasLegendaryItems() then
+                game.StarterGui:SetCore("SendNotification", {
+                    Title = "Notification",
+                    Text = "Item found: " .. item.Name,
+                    Icon = "http://www.roblox.com/asset/?id=16058297648",
+                    Duration = 5  
+                })
+                AutoFarmChest = false
+                break
+            end
+            
+            for i,v in pairs(game:GetService("Workspace"):GetChildren()) do
+                if v.Name:find("Chest") then
+                    if game:GetService("Workspace"):FindFirstChild(v.Name) then
+                        local chestDistance = (v.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+                        if chestDistance <= 5000 + _G.MagnitudeAdd then
+                            repeat 
+                                wait()
+                                if game:GetService("Workspace"):FindFirstChild(v.Name) then
+                                    HyperCahaya(v.CFrame)
+                                    if (v.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude < 10 then
+                                        autoJump()
+                                    end
+                                end
+                            until AutoFarmChest == false or not v.Parent
+                            
+                            HyperCahaya(game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.CFrame)
+                            _G.MagnitudeAdd = _G.MagnitudeAdd + 1500
+                            break
+                        end
+                    end
+                end
+            end
+        end
+    end
 end)
+    
+    
 
 Main:AddToggle("Farm Chest Bypass | 75% Kick",false,function(vu)
 	_G.ChestBypass = vu
-    _G.StopItemsChest = vu
+    StopTween(_G.ChestBypass)
 end)
 
 spawn(function()
@@ -5202,18 +6434,26 @@ end)
     end)
 
     Main:AddButton("Bypass Cake Island Teleport",function()
-        if BypassTP then
-            local cakepos = CFrame.new(-2077, 252, -12373)
-            BTP(cakepos)
-            wait(.1)
-            game.Players.localPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-2077, 252, -12373)
-            wait(.1)
-            game.Players.localPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-2077, 252, -12373)
-            wait(.1)
-            game.Players.localPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-2077, 252, -12373)
+        if BypassTP == "Cake Island" then
+            wait(0.1)
+            game.Players.localPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-1884.7747802734375, 19.327526092529297, -11666.8974609375)
+            game.Players.LocalPlayer.Character.Head:Destroy()
+            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("SetSpawnPoint")
         end
     end)
-    
+        --[[
+        if BypassTP then
+            local cakepos = CFrame.new(-2062.7475585938, 50.473892211914, -10232.568359375)
+            BTP(cakepos)
+            wait(.1)
+            game.Players.localPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-2062.7475585938, 50.473892211914, -10232.568359375)
+            wait(.1)
+            game.Players.localPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-2062.7475585938, 50.473892211914, -10232.568359375)
+            wait(.1)
+            game.Players.localPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-2062.7475585938, 50.473892211914, -10232.568359375)
+        end
+    end)
+]]
     Main:AddToggle("Farm Cake Prince",_G.AutoDoughtBoss,function(value)
         _G.AutoDoughtBoss = value
         StopTween(_G.AutoDoughtBoss)
@@ -5248,8 +6488,7 @@ end)
                                         v.Humanoid.WalkSpeed = 2
                                         v.HumanoidRootPart.Size = Vector3.new(50,50,50)
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                         sethiddenproperty(game.Players.LocalPlayer,"SimulationRadius",math.huge)
                                     until not _G.AutoDoughtBoss or not v.Parent or v.Humanoid.Health <= 0
                                 end
@@ -5276,8 +6515,7 @@ end)
                                                     MagnetDought = true
                                                     PosMonDoughtOpenDoor = v.HumanoidRootPart.CFrame
                                                     HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                                    game:GetService("VirtualUser"):CaptureController()
-                                                    game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                                    module:attack()
                                                 until not _G.AutoDoughtBoss or not v.Parent or v.Humanoid.Health <= 0 or game:GetService("Workspace").Map.CakeLoaf.BigMirror.Other.Transparency == 0 or game:GetService("ReplicatedStorage"):FindFirstChild("Cake Prince") or game:GetService("Workspace").Enemies:FindFirstChild("Cake Prince") or KillMob == 0
                                             end
                                         end
@@ -5345,8 +6583,7 @@ end)
                                         v.Humanoid.WalkSpeed = 2
                                         v.HumanoidRootPart.Size = Vector3.new(50,50,50)
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                         sethiddenproperty(game.Players.LocalPlayer,"SimulationRadius",math.huge)
                                     until not  _G.Autodoughking or not v.Parent or v.Humanoid.Health <= 0
                                 end
@@ -5445,8 +6682,7 @@ end)
                                         v.Humanoid.WalkSpeed = 2
                                         v.HumanoidRootPart.Size = Vector3.new(80,80,80)                             
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                         sethiddenproperty(game:GetService("Players").LocalPlayer,"SimulationRadius",math.huge)
                                     until not _G.AutoFarmBoss or not v.Parent or v.Humanoid.Health <= 0
                                 end
@@ -5586,14 +6822,14 @@ spawn(function()
         end
     end
 end)
-
+--[[
     Main:AddToggle("HyperSonic [ SUPER OP ]",false,function(value)
        _G.HyperSonic = value
     end)      
     
 local CameraShaker = require(game.ReplicatedStorage.Util.CameraShaker)
-CombatFrameworkR = require(game:GetService("Players").LocalPlayer.PlayerScripts.CombatFramework)
-y = debug.getupvalues(CombatFrameworkR)[2]
+CombatControllerR = require(game:GetService("Players").LocalPlayer.PlayerScripts.CombatController)
+y = debug.getupvalues(CombatControllerR)[2]
 spawn(function()
     game:GetService("RunService").RenderStepped:Connect(function()
         if _G.FastAttack or _G.HyperSonic then
@@ -5625,17 +6861,17 @@ spawn(function()
 end)
     
 spawn(function()
-while wait(.1) do
-    if _G.HyperSonic then
-        pcall(function()
-            repeat task.wait(0,09)
-                AttackHit()
-            until not _G.HyperSonic
-        end)
+    while wait(.1) do
+        if _G.HyperSonic then
+            pcall(function()
+                repeat task.wait(_G.FastAttackDelay)
+                    AttackHit()
+                until not _G.FastAttack
+            end)
+        end
     end
-end
-end)    
-    
+    end)   
+    ]]
 Main:AddToggle("Auto Click",false,function(value)
 _G.AutoClick = value
 end)
@@ -5652,37 +6888,64 @@ spawn(function()
     end)
 end)
 
-Main:AddToggle("Remove Hit Sound And Level Up",false,function(Remo)
+Main:AddToggle("Remove Hit Sound And Level Up",function(Remo)
 _G.RemoveHit = Remo
 end)
 
 spawn(function()
     game:GetService("RunService").RenderStepped:Connect(function()
-        if _G.RemoveHit == true then
-            game:GetService("ReplicatedStorage").Effect.Container.LevelUp:Destroy()
-            game:GetService("ReplicatedStorage").Util.Sound:Destroy()
-            game:GetService("ReplicatedStorage").Util.Sound.Storage.Other:FindFirstChild("LevelUp_Proxy"):Destroy()
-            game:GetService("ReplicatedStorage").Util.Sound.Storage.Other:FindFirstChild("LevelUp"):Destroy()
-            game:GetService("ReplicatedStorage").Effect.Container.Respawn:Destroy()        
+        if _G.RemoveHit == true then --memek1
+            local replicatedStorage = game:GetService("ReplicatedStorage")
+
+            local levelUpEffect = replicatedStorage:FindFirstChild("Effect") and replicatedStorage.Effect.Container:FindFirstChild("LevelUp")
+            if levelUpEffect then
+                levelUpEffect:Destroy()
+            end
+
+            local utilSound = replicatedStorage:FindFirstChild("Util") and replicatedStorage.Util:FindFirstChild("Sound")
+            if utilSound then
+                utilSound:Destroy()
+            end
+
+            local levelUpProxy = replicatedStorage.Util.Sound.Storage.Other:FindFirstChild("LevelUp_Proxy")
+            if levelUpProxy then
+                levelUpProxy:Destroy()
+            end
+
+            local levelUp = replicatedStorage.Util.Sound.Storage.Other:FindFirstChild("LevelUp")
+            if levelUp then
+                levelUp:Destroy()
+            end
+
+            local Death = replicatedStorage.Util.Sound.Storage.Other:FindFirstChild("Death")
+            if Death then
+                Death:Destroy()
+            end
+
+            local respawnEffect = replicatedStorage.Effect.Container:FindFirstChild("Respawn")
+            if respawnEffect then
+                respawnEffect:Destroy()
+            end
         end
     end)
 end)
 
 
+
     Main:AddToggle("Remove Attack",false,function(value)
-    getgenv().A = require(game:GetService("ReplicatedStorage").CombatFramework.RigLib).wrapAttackAnimationAsync 
-getgenv().B = require(game.Players.LocalPlayer.PlayerScripts.CombatFramework.Particle).play
+    getgenv().A = require(game:GetService("ReplicatedStorage").CombatController.RigLib).wrapAttackAnimationAsync 
+getgenv().B = require(game.Players.LocalPlayer.PlayerScripts.CombatController.Particle).play
 spawn(function()
 
     while wait() do
             pcall(function()
-                require(game:GetService("ReplicatedStorage").CombatFramework.RigLib).wrapAttackAnimationAsync =function(a1,a2,a3,a4,a5)
-                    local GetBladeHits = require(game:GetService("ReplicatedStorage").CombatFramework.RigLib).getBladeHits(a2,a3,a4)
+                require(game:GetService("ReplicatedStorage").CombatController.RigLib).wrapAttackAnimationAsync =function(a1,a2,a3,a4,a5)
+                    local GetBladeHits = require(game:GetService("ReplicatedStorage").CombatController.RigLib).getBladeHits(a2,a3,a4)
                     if GetBladeHits then
-                         require(game:GetService("ReplicatedStorage").CombatFramework.RigLib).play = function() end
+                         require(game:GetService("ReplicatedStorage").CombatController.RigLib).play = function() end
                         a1:Play(0.2, 0.2, 0.2)
                         a5(GetBladeHits)
-                         require(game:GetService("ReplicatedStorage").CombatFramework.RigLib).play = getgenv().B 
+                         require(game:GetService("ReplicatedStorage").CombatController.RigLib).play = getgenv().B 
                         wait(.5)
                         a1:Stop()
                     end
@@ -5745,86 +7008,6 @@ end)
         end
       end
     end)
-
-    STg:AddSeperator("ESP MENU")
-
-    STg:AddToggle("Esp Mirage Island",false,function(a)
-        MirageIslandESP = a
-            while MirageIslandESP do wait()
-                UpdateIslandMirageESP()
-            end
-        end)
-       
-    STg:AddToggle("Esp Kitsune Island",false,function(a)
-        IslandKitsuneESP = a
-            while IslandKitsuneESP do wait()
-                UpdateIslandKitsuneESP()
-            end
-        end)
-    
-    STg:AddToggle("ESP Player",false,function(a)
-        ESPPlayer = a
-	UpdatePlayerChams()
-    end)
-    
-    STg:AddToggle("ESP Chest",false,function(a)
-        ChestESP = a
-	UpdateChestChams() 
-    end)
-    
-    STg:AddToggle("ESP Fruit",false,function(a)
-        DevilFruitESP = a
-        while DevilFruitESP do wait()
-            UpdateDevilChams() 
-        end
-    end)
-    
-    STg:AddToggle("ESP Real Fruit",RealFruitESP,function(a)
-        RealFruitESP = a
-	UpdateRealFruitChams() 
-    end)
-    
-    STg:AddToggle("ESP Flower",false,function(a)
-        FlowerESP = a
-	UpdateFlowerChams() 
-    end)
-    spawn(function()
-	    while wait(2) do
-		    if FlowerESP then
-			    UpdateFlowerChams() 
-		    end
-		    if DevilFruitESP then
-			    UpdateDevilChams() 
-		    end
-		    if ChestESP then
-			    UpdateChestChams() 
-		    end
-		    if ESPPlayer then
-			    UpdatePlayerChams()
-		    end
-		    if RealFruitESP then
-			    UpdateRealFruitChams()
-		    end
-	    end
-    end)
-STg:AddToggle("ESP Island",IslandESP,function(value)
-        IslandESP = value
-        while IslandESP do wait()
-            UpdateIslandESP() 
-        end
-    end)
-    STg:AddToggle("Esp Npc", false, function(nec)
-    NpcESP = nec
-end)
-
-STg:AddToggle("Esp Sea Beast", false, function(nec)
-    SeaESP = nec
-end)
-
-
-STg:AddToggle("Esp Mob", false, function(nec)
-    MobESP = nec
-end)
     
     STg:AddSeperator("Setting Farm Mode")
 
@@ -5877,28 +7060,52 @@ end)
 
     STg:AddSeperator("Setting Skill Gun")
 
-    STg:AddLabel("Wait Update")
-    STg:AddSeperator("Buso Haki State")
-    
-    STg:AddDropdown("Select Haki State",{"State 0","State 1","State 2","State 3","State 4","State 5"},function(value)
-        _G.SelectStateHaki = value
+    STg:AddToggle("Gun Skill Z",true,function(value)
+        _G.GunSkillZ = value
     end)
-    
-    STg:AddButton("Change Buso Haki State",function()
-        if _G.SelectStateHaki == "State 0" then
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("ChangeBusoStage",0)
-        elseif _G.SelectStateHaki == "State 1" then
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("ChangeBusoStage",1)
-        elseif _G.SelectStateHaki == "State 2" then
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("ChangeBusoStage",2)
-        elseif _G.SelectStateHaki == "State 3" then
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("ChangeBusoStage",3)
-        elseif _G.SelectStateHaki == "State 4" then
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("ChangeBusoStage",4)
-        elseif _G.SelectStateHaki == "State 5" then
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("ChangeBusoStage",5)
-        end
+
+    STg:AddToggle("Skill Gun X",true,function(value)
+        _G.GunSkillX = value
     end)
+
+    _G.AutoMasteryGunSkill = true
+	spawn(function()
+		while task.wait() do
+			pcall(function()
+				if _G.UseSkill and _G.AutoMasteryGunSkill then
+					if _G.SkillZ then
+						game:GetService("VirtualInputManager"):SendKeyEvent(true,"Z",false,game)
+						game:GetService("VirtualInputManager"):SendKeyEvent(false,"Z",false,game)
+					end
+					if _G.SkillX then
+						game:GetService("VirtualInputManager"):SendKeyEvent(true,"X",false,game)
+						game:GetService("VirtualInputManager"):SendKeyEvent(false,"X",false,game)
+					end
+					if _G.SkillC then
+						game:GetService("VirtualInputManager"):SendKeyEvent(true,"C",false,game)
+						game:GetService("VirtualInputManager"):SendKeyEvent(false,"C",false,game)
+					end
+					if _G.SkillV then
+						game:GetService("VirtualInputManager"):SendKeyEvent(true,"V",false,game)
+						game:GetService("VirtualInputManager"):SendKeyEvent(false,"V",false,game)
+					end
+				elseif UseSkillGun then
+					if _G.GunSkillZ then
+						game:GetService("VirtualInputManager"):SendKeyEvent(true,"Z",false,game)
+						game:GetService("VirtualInputManager"):SendKeyEvent(false,"Z",false,game)
+					end
+					if _G.GunSkillX then
+						game:GetService("VirtualInputManager"):SendKeyEvent(true,"X",false,game)
+						game:GetService("VirtualInputManager"):SendKeyEvent(false,"X",false,game)
+					end
+				end
+			end)
+		end
+	end)
+
+
+
+
     
     if World1 or World2 then
     M:AddSeperator("World")
@@ -6283,8 +7490,7 @@ end)
                                         AutoHaki()         
                                         EquipWeapon(_G.SelectWeapon)           
                                         HyperCahaya(CFrame.new(448.46756, 199.356781, -441.389252))                                  
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                     until v.Humanoid.Health <= 0 or _G.AutoFactory == false
                                 end
                             end
@@ -6475,8 +7681,7 @@ spawn(function()
     while wait() do
         pcall(function()
             if _G.dao then
-                local batuLaut = {"SmallGroup", "SmallCluster", "MediumGroup", "MediumFlat", "Large", "Largest", "RockPart", "RockGroup", "Coral", "BigRock", "SmallRock", "SeaRock", "RockPile", "Cliff"}
-                
+                local batuLaut = {"SmallGroup", "SmallCluster", "MediumGroup", "MediumFlat", "Large", "Largest"}
 
                 for _, v in pairs(workspace:GetChildren()) do
                     if table.find(batuLaut, v.Name) and v:IsA("Model") then
@@ -6577,7 +7782,6 @@ SNt:AddToggle("Auto Boat Drive Press W",AutoW,function(W)
     end
     end)
     end)
-        
 
 SNt:AddToggle("Teleport Blue Gear",_G.TweenMGear,function(value)
 _G.TweenMGear = value
@@ -6602,22 +7806,50 @@ spawn(function()
     end)
     end)
 
-    SNt:AddToggle("Auto Hop Server Mirage Island",_G.Hopfinddao,function(value)
-        _G.Hopfinddao = value
-       end)
-        spawn(function()
-            while wait() do
-            if _G.Hopfinddao then
-                if game:GetService("Workspace").Map:FindFirstChild("MysticIsland") or game:GetService("Workspace").Map:FindFirstChild("MysticIsland") then
-                    if HighestPointRealCFrame and (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - HighestPointRealCFrame.Position).Magnitude > 10 then
-                    topos(getHighestPoint().CFrame * CFrame.new(0, 211.88, 0))
-                        end
-                elseif not game:GetService("Workspace").Map:FindFirstChild("MysticIsland") or not game:GetService("Workspace").Map:FindFirstChild("MysticIsland") then
-                    Hop()
+--[[
+    SNt:AddToggle("Auto Hop Server Mirage Island", _G.HopFindMirage, function(value)
+        _G.HopFindMirage = value
+    end)
+
+    local function GetServers()
+        local PlaceID = game.PlaceId
+        local servers = {}
+        local req = game:GetService("HttpService"):JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. PlaceID .. '/servers/Public?sortOrder=Asc&limit=100'))
+        
+        for _, server in pairs(req.data) do
+            if server.playing < server.maxPlayers and server.id ~= game.JobId then
+                table.insert(servers, server.id)
+            end
+        end
+        
+        return servers
+    end
+    
+    local function TeleportToPublicServer()
+        local servers = GetServers()
+        if #servers > 0 then
+            game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, servers[math.random(1, #servers)])
+        else
+            print("Tidak ada server publik yang tersedia.")
+        end
+    end
+    
+    spawn(function()
+        while wait() do
+            if _G.HopFindMirage then
+                if game:GetService("Workspace").Map:FindFirstChild("MysticIsland") then
+                    if HighestPointRealCFrame and 
+                       (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - HighestPointRealCFrame.Position).Magnitude > 10 then
+                        topos(getHighestPoint().CFrame * CFrame.new(0, 211.88, 0))
                     end
+                else
+                    TeleportToPublicServer()
                 end
             end
-        end)
+        end
+    end)
+]]
+
 if World1 or world2 then
     M:AddLine()
 end
@@ -6981,8 +8213,7 @@ spawn(function()
                                         MakoriGayMag = true
                                         PosGay = v.HumanoidRootPart.CFrame
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                     until not Radioactive or not v.Parent or v.Humanoid.Health <= 0
                                     MakoriGayMag = false
                                 end
@@ -7025,8 +8256,7 @@ spawn(function()
                                         MakoriGayMag = true
                                         PosGay = v.HumanoidRootPart.CFrame
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                     until not Vampire or not v.Parent or v.Humanoid.Health <= 0
                                     MakoriGayMag = false
                                 end
@@ -7070,8 +8300,7 @@ spawn(function()
                                         StartEctoplasmMagnet = true
                                         EctoplasmMon = v.HumanoidRootPart.CFrame
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                     until not _G.AutoEctoplasm or not v.Parent or v.Humanoid.Health <= 0
                                     StartEctoplasmMagnet = false
                                 end
@@ -7112,8 +8341,7 @@ spawn(function()
                                         MakoriGayMag = true
                                         PosGay = v.HumanoidRootPart.CFrame
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                     until not _G.Makori_gay or not v.Parent or v.Humanoid.Health <= 0
                                     MakoriGayMag = false
                                 end
@@ -7157,8 +8385,7 @@ spawn(function()
                                         MakoriGayMag = true
                                         PosGay = v.HumanoidRootPart.CFrame
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                     until not _G.Umm or not v.Parent or v.Humanoid.Health <= 0
                                     MakoriGayMag = false
                                 end
@@ -7197,8 +8424,7 @@ spawn(function()
                                         MakoriGayMag = true
                                         PosGay = v.HumanoidRootPart.CFrame
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                     until not _G.Umm or not v.Parent or v.Humanoid.Health <= 0
                                     MakoriGayMag = false
                                 end
@@ -7241,8 +8467,7 @@ spawn(function()
                                         MakoriGayMag = true
                                         PosGay = v.HumanoidRootPart.CFrame
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                     until not _G.Auto_Wing or not v.Parent or v.Humanoid.Health <= 0
                                     MakoriGayMag = false
                                 end
@@ -7285,8 +8510,7 @@ spawn(function()
                                         MakoriGayMag = true
                                         PosGay = v.HumanoidRootPart.CFrame
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                     until not _G.Leather or not v.Parent or v.Humanoid.Health <= 0
                                     MakoriGayMag = false
                                 end
@@ -7324,8 +8548,7 @@ spawn(function()
                                         MakoriGayMag = true
                                         PosGay = v.HumanoidRootPart.CFrame
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                     until not _G.Leather or not v.Parent or v.Humanoid.Health <= 0
                                     MakoriGayMag = false
                                 end
@@ -7363,8 +8586,7 @@ spawn(function()
                                         MakoriGayMag = true
                                         PosGay = v.HumanoidRootPart.CFrame
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                     until not _G.Leather or not v.Parent or v.Humanoid.Health <= 0
                                     MakoriGayMag = false
                                 end
@@ -7407,8 +8629,7 @@ spawn(function()
                                         MakoriGayMag = true
                                         PosGay = v.HumanoidRootPart.CFrame
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                     until not Scrap or not v.Parent or v.Humanoid.Health <= 0
                                     MakoriGayMag = false
                                 end
@@ -7446,8 +8667,7 @@ spawn(function()
                                         MakoriGayMag = true
                                         PosGay = v.HumanoidRootPart.CFrame
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                     until not Scrap or not v.Parent or v.Humanoid.Health <= 0
                                     MakoriGayMag = false
                                 end
@@ -7485,8 +8705,7 @@ spawn(function()
                                         MakoriGayMag = true
                                         PosGay = v.HumanoidRootPart.CFrame
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                     until not Scrap or not v.Parent or v.Humanoid.Health <= 0
                                     MakoriGayMag = false
                                 end
@@ -7529,8 +8748,7 @@ spawn(function()
                                         MakoriGayMag = true
                                         PosGay = v.HumanoidRootPart.CFrame
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                     until not Cocoafarm or not v.Parent or v.Humanoid.Health <= 0
                                     MakoriGayMag = false
                                 end
@@ -7573,8 +8791,7 @@ spawn(function()
                                         MakoriGayMag = true
                                         PosGay = v.HumanoidRootPart.CFrame
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                     until not Dragon_Scale or not v.Parent or v.Humanoid.Health <= 0
                                     MakoriGayMag = false
                                 end
@@ -7617,8 +8834,7 @@ spawn(function()
                                         MakoriGayMag = true
                                         PosGay = v.HumanoidRootPart.CFrame
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                     until not Gunpowder or not v.Parent or v.Humanoid.Health <= 0
                                     MakoriGayMag = false
                                 end
@@ -7661,8 +8877,7 @@ spawn(function()
                                         MakoriGayMag = true
                                         PosGay = v.HumanoidRootPart.CFrame
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                     until not Fish or not v.Parent or v.Humanoid.Health <= 0
                                     MakoriGayMag = false
                                 end
@@ -7705,8 +8920,7 @@ spawn(function()
                                         MakoriGayMag = true
                                         PosGay = v.HumanoidRootPart.CFrame
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                     until not MiniHee or not v.Parent or v.Humanoid.Health <= 0
                                     MakoriGayMag = false
                                 end
@@ -7867,6 +9081,7 @@ SNt:AddToggle('Kill Sea Beast Hop', false, function(value)
     end)
     
 SNt:AddSeperator(" Sea Event ")
+--[[
 if World3 then
 spawn(function()
     pcall(function()
@@ -7900,8 +9115,275 @@ spawn(function()
         end)
     end
 end)
+]]
 
+SNt:AddLabel("Just turn on auto sail")
+spawn(function()
+    while wait() do
+        pcall(function()
+			for i, v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+				if string.find(v.Name, "Terror") then
+					StatusTerror = "🟢"
+				else 
+					StatusTerror = "🔴"
+				end
+			end
+			
+			for i, v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+				if string.find(v.Name, "Piranha") then
+					StatusSea = "🟢"
+				else 
+					StatusSea = "🔴"
+				end
+			end
+
+            for i, v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+				if string.find(v.Name, "Leviathan") then
+					StatusLevi = "🟢"
+				else 
+					StatusLevi = "🔴"
+				end
+			end
+			
+			for i, v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+				if string.find(v.Name, "Shark") then
+					StatusSea1 = "🟢"
+				else 
+					StatusSea1 = "🔴"
+				end
+			end
+			
+			for i, v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+				if string.find(v.Name, "Fish Crew Member") then
+					StatusSea2 = "🟢"
+				else 
+			StatusSea2 = "🔴"
+		end
+    end
+ end)
+end
+end)
+
+task.spawn(function()
+    while wait() do
+        pcall(function()
+			StatusSeaRough:Set("Leviathan: "..StatusLevi.." | Terrorshark: "..StatusTerror.." | Piranha: "..StatusSea.."\n | Shark: "..StatusSea1.." | Fish Crew Member:"..StatusSea2) 
+		end)
+	end
+end)
+
+
+StatusSeaRough = SNt:AddLabel("Sea Event : Only Third Sea")
+
+SNt:AddToggle("Auto Sail Rough Sea",_G.BiirTrax,function(state)
+    if state then
+        _G.BiirTrax = true
+    else
+        _G.BiirTrax = false
+    end
+
+
+if _G.BiirTrax then
+
+game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-16921.853515625, 9.0863618850708, 433.9601135253906) 
+wait(0.5) 
+
+local args = {
+    [1] = "BuyBoat",
+    [2] = "PirateBrigade"
+}
+
+game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(args))
+
+function two(gotoCFrame) --- Tween
+      pcall(function()
+          game.Players.LocalPlayer.Character.Humanoid.Sit = false
+          game.Players.LocalPlayer.Character.HumanoidRootPart.Anchored = false
+      end)
+      if (game:GetService("Players")["LocalPlayer"].Character.HumanoidRootPart.Position - gotoCFrame.Position).Magnitude <= 200 then
+          pcall(function() 
+              tweenz:Cancel()
+          end)
+          game:GetService("Players")["LocalPlayer"].Character.HumanoidRootPart.CFrame = gotoCFrame
+      else
+          local tween_s = game:service"TweenService"
+          local info = TweenInfo.new((game:GetService("Players")["LocalPlayer"].Character.HumanoidRootPart.Position - gotoCFrame.Position).Magnitude/325, Enum.EasingStyle.Linear)
+           tween, err = pcall(function()
+              tweenz = tween_s:Create(game.Players.LocalPlayer.Character["HumanoidRootPart"], info, {CFrame = gotoCFrame})
+              tweenz:Play()
+          end)
+          if not tween then return err end
+      end
+      function _TweenCanCle()
+          tweenz:Cancel()
+      end
+  
+end
+two(CFrame.new(-30939.830078125, 3.729933261871338, 9256.4208984375))
+
+for _,v in next, workspace.Boats.PirateBrigade:GetDescendants() do
+    if v.Name:find("VehicleSeat") then
+    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.CFrame
+    end
+end
+end
+end)
+
+spawn(function()
+    while wait() do
+        pcall(function()
+            if _G.BiirTrax then
+                for _, v in next, workspace.Boats.PirateBrigade:GetDescendants() do
+                    if v.Name:find("VehicleSeat") then
+                        wait(5) 
+                        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.CFrame
+                        break
+                    end
+                end
+
+                local vehicleSeat = nil
+                local enemyTypes = {
+                    {name = "Terrorshark", variable = "Terrorshark"},
+                    {name = "Shark", variable = "Shark"},
+                    {name = "Piranha", variable = "Piranha"},
+                    {name = "FishBoat", variable = "FishBoat"}, 
+                }
+
+                for _, v in next, workspace.Boats.PirateBrigade:GetDescendants() do
+                    if v.Name:find("VehicleSeat") then
+                        vehicleSeat = v
+                        wait(0.2) 
+
+                        for _, enemyType in pairs(enemyTypes) do
+                            local enemyName = enemyType.name
+                            local enemyVariable = enemyType.variable
+
+                            if game:GetService("Workspace").Enemies:FindFirstChild(enemyName) then
+                                game.Players.LocalPlayer.Character.Humanoid.Sit = false
+                                wait(0.1) 
+                                _G[enemyVariable] = true
+
+                                -- Menunggu musuh mati
+                                while game:GetService("Workspace").Enemies:FindFirstChild(enemyName) do
+                                    wait(0.2) 
+                                end
+
+                                _G[enemyVariable] = false
+                                game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = vehicleSeat.CFrame
+                            end
+                        end
+
+                        if game.Workspace._WorldOrigin.Locations:FindFirstChild('Frozen Dimension') then
+                            _G.BiirTrax = false
+                            wait(0.5)
+                            game.Players.LocalPlayer.Character.Humanoid.Sit = false
+                            wait(0.5)
+                            _G.Frozen = true
+                        end
+                    end
+                end
+            end
+        end)
+    end
+end)
+
+spawn(function()
+    while wait() do
+        pcall(function()
+            if _G.BiirTrax then
+                local batuLaut = {"SmallGroup", "SmallCluster", "MediumGroup", "MediumFlat", "Large", "Largest"}
+
+                for _, v in pairs(workspace:GetChildren()) do
+                    if table.find(batuLaut, v.Name) and v:IsA("Model") then
+                        for _, part in pairs(v:GetDescendants()) do
+                            if part:IsA("BasePart") then
+                                part.CanCollide = false
+                            end
+                        end
+                    end
+                end
+            end
+        end)
+    end
+end)
+
+spawn(function()
+    while wait() do
+        pcall(function()
+            if _G.BiirTrax then
+                wait(0.8) 
+                local targetModelNames = "PirateBrigade"
+                local models = workspace.Boats:GetChildren()
+
+                for _, targetModelName in ipairs(targetModelNames) do
+                    local targetModel = workspace:FindFirstChild(targetModelName)
+
+                    if targetModel then
+                        local speed = 350 --10.5
+                        local forwardDirection = targetModel.PrimaryPart.CFrame.lookVector
+                        local targetPosition = targetModel.PrimaryPart.Position + forwardDirection * 10
+                        
+                        while (targetModel.PrimaryPart.Position - targetPosition).Magnitude > 0.1 do
+                            targetModel:SetPrimaryPartCFrame(targetModel.PrimaryPart.CFrame + forwardDirection * speed)
+                            task.wait()
+                            if not _G.BiirTrax then
+                                break
+                            end
+                        end
+                    end
+                end
+            end
+        end)
+    end
+end)
+
+SNt:AddToggle("Auto Boat Drive Press W",AutoW,function(W)
+    AutoW = W
+    end)
+    spawn(function()
+    while wait() do
+   pcall(function()
+            if AutoW then
+                game:service('VirtualInputManager'):SendKeyEvent(true, "W", false, game)
+                wait(0.35)
+                game:service('VirtualInputManager'):SendKeyEvent(false, "W", false, game)
+                wait(1.5)
+                game:service('VirtualInputManager'):SendKeyEvent(true, "S", false, game)
+               wait(0.35)
+              game:service('VirtualInputManager'):SendKeyEvent(false, "S", false, game)
+                wait(1.5)
+            end
+        end)
+    end
+    end)
+
+
+SNt:AddToggle("Speed Boat",_G.IncreaseBoatSpeed,function(state)
+    _G.IncreaseBoatSpeed = state
+    end)
     
+                spawn(function()
+                    while wait() do 
+                        pcall(function()
+                            local vehicleSeats = {}
+                            for i, v in pairs(game.Workspace.Boats:GetDescendants()) do
+                                if v:IsA("VehicleSeat") then
+                                    table.insert(vehicleSeats, v)
+                                end
+                            end
+                            if _G.IncreaseBoatSpeed then
+                                for _, v in pairs(vehicleSeats) do
+                                    v.MaxSpeed = 350
+                                end
+                            else
+                                for _, v in pairs(vehicleSeats) do
+                                    v.MaxSpeed = 150
+                                end
+                            end
+                        end)
+                    end
+                end)
+
 SNt:AddToggle("Auto Kill Terrorshark",_G.Makori_gay,function(value)
 _G.Terrorshark = value
 StopTween(_G.Terrorshark)
@@ -7915,7 +9397,7 @@ spawn(function()
                         for i,v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
                             if v.Name == "Terrorshark" then
                                 if v:FindFirstChild("Humanoid") and v:FindFirstChild("HumanoidRootPart") and v.Humanoid.Health > 0 then
-                                    repeat task.wait()
+                                    repeat task.wait(0.01)
                                         AutoHaki()
                                         EquipWeapon(_G.SelectWeapon)
                                         v.HumanoidRootPart.CanCollide = false
@@ -7924,8 +9406,7 @@ spawn(function()
                                         MakoriGayMag = false
                                         PosGay = v.HumanoidRootPart.CFrame
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(2,63,2))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                     until not _G.Terrorshark or not v.Parent or v.Humanoid.Health <= 0
                                     MakoriGayMag = false
                                 end
@@ -7967,8 +9448,7 @@ spawn(function()
                                         MakoriGayMag = false
                                         PosGay = v.HumanoidRootPart.CFrame
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(2,60,2))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                     until not _G.Shark or not v.Parent or v.Humanoid.Health <= 0
                                     MakoriGayMag = false
                                 end
@@ -8010,8 +9490,7 @@ spawn(function()
                                         MakoriGayMag = false
                                         PosGay = v.HumanoidRootPart.CFrame
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(2,60,2))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                     until not _G.Piranha or not v.Parent or v.Humanoid.Health <= 0
                                     MakoriGayMag = false
                                 end
@@ -8184,7 +9663,7 @@ wait(0.5)
 elseif state and (not findItem("Monster Magnet", 1) or not findItem("Terror Eyes", 2) and not findItem("Electric Wing", 8) and not findItem("Fool's Gold", 20) and not findItem("Shark Tooth", 10)) then
     _G.Anchor = false
     game.StarterGui:SetCore("SendNotification", {
-        Icon = "rbxassetid://16058297648",
+        Icon = "rbxassetid://80725673395393",
         Title = "! WARNING !", 
         Text = "You need more materials \nto buy a Monster Magnet."
     })
@@ -8302,8 +9781,7 @@ spawn(function()
     while wait() do
         pcall(function()
             if _G.Anchor then
-                local batuLaut = {"SmallGroup", "SmallCluster", "MediumGroup", "MediumFlat", "Large", "Largest", "RockPart", "RockGroup", "Coral", "BigRock", "SmallRock", "SeaRock", "RockPile", "Cliff"}
-                
+                local batuLaut = {"SmallGroup", "SmallCluster", "MediumGroup", "MediumFlat", "Large", "Largest"}
 
                 for _, v in pairs(workspace:GetChildren()) do
                     if table.find(batuLaut, v.Name) and v:IsA("Model") then
@@ -8329,7 +9807,7 @@ spawn(function()
 
                 for _, model in pairs(models) do
                     if model.Name == targetModelName then
-                        local speed = 350
+                        local speed = 10.5
                         local forwardDirection = model.PrimaryPart.CFrame.lookVector
                         local targetPosition = model.PrimaryPart.Position + forwardDirection * 10
                         
@@ -8372,8 +9850,30 @@ M:AddToggle("Auto Finish Zone 5 (fix bug)",_G.dao,function(state)
                 end
             end
         end)
-]]
-SNt:AddToggle("Speed Boat",false ,_G.IncreaseBoatSpeed,function(value) -- state
+
+local boatList = {
+    "Speedboat",
+    "Enforcer",
+    "Sloop",
+    "Brigantine",
+    "Galleon",
+    "Dinghy",
+    "PirateSloop",
+    "PirateBrigade",
+    "PirateGalleon",
+    "LuxuryBoat",
+    "MilitaryBoat",
+    "CoffinBoat",
+    "SwampBoat",
+    "Miracle",
+    "The Sentinel",
+    "Guardian",
+    "Lantern",
+    "Beast Hunter",
+    "Sleigh"
+}
+
+SNt:AddToggle("Auto Speed Boat",_G.IncreaseBoatSpeed,function(value) -- state
     _G.IncreaseBoatSpeed = value
 end)
 
@@ -8382,13 +9882,13 @@ spawn(function()
         pcall(function()
             local vehicleSeat = {}
             for i, v in pairs(game.Workspace.Boats:GetDescendants()) do
-                if v:IsA("VehicleSeat") then
-                    table.insert(vehicleSeats, v)
+                if v:IsA("VehicleSeat") and table.find(boatList, v.Parent.Name) then
+                    table.insert(vehicleSeat, v)
                 end
             end
             if _G.IncreaseBoatSpeed then
                 for _, v in pairs(vehicleSeat) do
-                    v.MaxSpeed = 350
+                    v.MaxSpeed = 500
                 end
             else
                 for _, v in pairs(vehicleSeat) do
@@ -8398,262 +9898,276 @@ spawn(function()
         end)
     end
 end)
---[[
--- Menambahkan fungsi untuk toggle
-SNt:AddToggle("Boat Fly", false, function(value)
-    _G.WalkWaterBoat = value
+
+SNt:AddToggle("Boat Fly (beta)",_G.WalkWaterBoat,function(state)
+    _G.WalkWaterBoat = state
 end)
 
--- Loop utama
 spawn(function()
     while task.wait() do
         pcall(function()
             if _G.WalkWaterBoat then
-                -- Mengatur ukuran tinggi air menjadi lebih tinggi
-                game:GetService("Workspace").Map["WaterBase-Plane"].Size = Vector3.new(1000, 352, 1000)
-                
-                -- Mengatur posisi boat agar mengambang lebih tinggi di atas air
+                -- Mengubah tinggi air untuk efek berjalan di atas air
+                local waterHeight = 500
+                game:GetService("Workspace").Map["WaterBase-Plane"].Size = Vector3.new(1000, waterHeight, 1000)
+
+                -- Menyesuaikan posisi semua boat agar tampak terbang di atas air tanpa animasi naik-turun
                 for _, boat in pairs(game:GetService("Workspace").Boats:GetChildren()) do
                     if boat:IsA("Model") and boat:FindFirstChild("PrimaryPart") then
-                        local boatPosition = boat.PrimaryPart.Position
-                        -- Tinggi boat ketika air berada di posisi tinggi
-                        boat.PrimaryPart.Position = Vector3.new(boatPosition.X, 350, boatPosition.Z) --117
+                        -- Menonaktifkan gravitasi pada boat
+                        boat.PrimaryPart.Anchored = true
+                        
+                        -- Mengatur posisi boat agar "terbang" di atas air tanpa menyentuhnya
+                        local flyingHeight = 550 -- ketinggian tetap di atas air (50 unit di atas waterHeight)
+                        local newPosition = Vector3.new(boat.PrimaryPart.Position.X, flyingHeight, boat.PrimaryPart.Position.Z)
+                        boat:SetPrimaryPartCFrame(CFrame.new(newPosition))
                     end
                 end
             else
-                -- Mengembalikan ukuran air ke posisi semula (lebih rendah)
-                game:GetService("Workspace").Map["WaterBase-Plane"].Size = Vector3.new(1000, 0, 1000)
+                -- Kembali ke tinggi air normal
+                local normalWaterHeight = 80
+                game:GetService("Workspace").Map["WaterBase-Plane"].Size = Vector3.new(1000, normalWaterHeight, 1000)
                 
-                -- Mengembalikan posisi boat ke posisi rendah sesuai dengan ketinggian air rendah
+                -- Mengembalikan posisi boat ke tinggi air normal
                 for _, boat in pairs(game:GetService("Workspace").Boats:GetChildren()) do
                     if boat:IsA("Model") and boat:FindFirstChild("PrimaryPart") then
-                        local boatPosition = boat.PrimaryPart.Position
-                        -- Posisi boat ketika air di posisi rendah
-                        boat.PrimaryPart.Position = Vector3.new(boatPosition.X, 5, boatPosition.Z)
+                        -- Mengembalikan properti Anchored menjadi false untuk mengaktifkan gravitasi
+                        boat.PrimaryPart.Anchored = false
+                        
+                        -- Mengatur boat agar kembali ke permukaan air normal
+                        local boatHeightOffset = 10 -- offset untuk memastikan boat tetap di atas permukaan air
+                        local newPosition = Vector3.new(boat.PrimaryPart.Position.X, normalWaterHeight + boatHeightOffset, boat.PrimaryPart.Position.Z)
+                        boat:SetPrimaryPartCFrame(CFrame.new(newPosition))
                     end
                 end
             end
         end)
+    end
+end)
+
+SetSpeedBoat = 400
+
+-- Perbaiki fungsi slider
+SNt:AddSlider("Speed Boat", 0,1000,400, function(value)
+    SetSpeedBoat = value
+end)
+]]
+-- Fungsi toggle untuk mengaktifkan atau menonaktifkan Speed Boat
+
+
+SNt:AddSeperator("Frozen Dimension")
+
+SNt:AddToggle('Auto Kill Leviathan', false, function(value)
+    _G.AutoKillLeviathan = value
+    StopTween(_G.AutoKillLeviathan)
+end)
+
+function CheckLeviathanSegment()
+    local checkmmpb = {"Leviathan", "Leviathan Segment"}
+    for r, v in next, game:GetService("Workspace").Enemies:GetChildren() do
+        if table.find(checkmmpb, v.Name) and v:FindFirstChild("Health") and v.Health.Value > 0 then
+            return v
+        end
+    end
+end
+spawn(function()
+while wait() do
+pcall(function()
+    if _G.AutoKillLeviathan and World3 then
+        if CheckLeviathanSegment() then
+            game:GetService("VirtualInputManager"):SendKeyEvent(true, 32, false, game)
+            wait(0.5)
+            game:GetService("VirtualInputManager"):SendKeyEvent(false, 32, false, game)
+            local v = CheckLeviathanSegment()
+            repeat
+                wait()
+                spawn(HyperCahaya(v.Engine.CFrame * CFrame.new(0, -20, 0), 1))
+                matquyenkiemsoat = true
+                getgenv().noclip = true
+                FullPower = true
+                getgenv().psskill = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, -5, 0)
+            until v.Parent or v.Health.Value <= 0 or not CheckLeviathanSegment()
+            getgenv().psskill = nil
+            FullPower = false
+            matquyenkiemsoat = false
+            getgenv().noclip = false
+        end
+    end
+end)
+end
+end)
+
+spawn(function()
+while wait() do
+    if _G.AutoKillLeviathan and World3 then
+           pcall(function()
+                if CheckLeviathanSegment() then
+                    AutoHaki()
+                    game:GetService("VirtualUser"):CaptureController()
+                    game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                    for i,v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+                        if v:IsA("Tool") then
+                            if v.ToolTip == "Melee" then -- "Blox Fruit" , "Sword" , "Wear" , "Agility"
+                                game.Players.LocalPlayer.Character.Humanoid:EquipTool(v)
+                            end
+                        end
+                    end
+                    game:GetService("VirtualInputManager"):SendKeyEvent(true,122,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                    game:GetService("VirtualInputManager"):SendKeyEvent(false,122,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                    wait(.2)
+                    game:GetService("VirtualInputManager"):SendKeyEvent(true,120,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                    game:GetService("VirtualInputManager"):SendKeyEvent(false,120,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                    wait(.2)
+                    game:GetService("VirtualInputManager"):SendKeyEvent(true,99,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                    game:GetService("VirtualInputManager"):SendKeyEvent(false,99,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                    wait(.2)
+                    game:GetService("VirtualInputManager"):SendKeyEvent(false,"C",false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                    for i,v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+                        if v:IsA("Tool") then
+                            if v.ToolTip == "Blox Fruit" then -- "Blox Fruit" , "Sword" , "Wear" , "Agility"
+                                game.Players.LocalPlayer.Character.Humanoid:EquipTool(v)
+                            end
+                        end
+                    end
+                    game:GetService("VirtualInputManager"):SendKeyEvent(true,122,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                    game:GetService("VirtualInputManager"):SendKeyEvent(false,122,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                    wait(.2)
+                    game:GetService("VirtualInputManager"):SendKeyEvent(true,120,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                    game:GetService("VirtualInputManager"):SendKeyEvent(false,120,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                    wait(.2)
+                    game:GetService("VirtualInputManager"):SendKeyEvent(true,99,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                    game:GetService("VirtualInputManager"):SendKeyEvent(false,99,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                    wait(.2)
+                    game:GetService("VirtualInputManager"):SendKeyEvent(true,"V",false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                    game:GetService("VirtualInputManager"):SendKeyEvent(false,"V",false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                    wait(0.6)
+                    for i,v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+                        if v:IsA("Tool") then
+                            if v.ToolTip == "Sword" then -- "Blox Fruit" , "Sword" , "Wear" , "Agility"
+                                game.Players.LocalPlayer.Character.Humanoid:EquipTool(v)
+                            end
+                        end
+                    end
+                    game:GetService("VirtualInputManager"):SendKeyEvent(true,122,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                    game:GetService("VirtualInputManager"):SendKeyEvent(false,122,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                    wait(.2)
+                    game:GetService("VirtualInputManager"):SendKeyEvent(true,120,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                    game:GetService("VirtualInputManager"):SendKeyEvent(false,120,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                    wait(.2)
+                    game:GetService("VirtualInputManager"):SendKeyEvent(true,99,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                    game:GetService("VirtualInputManager"):SendKeyEvent(false,99,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                    wait(0.5)
+                    for i,v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+                        if v:IsA("Tool") then
+                            if v.ToolTip == "Gun" then -- "Blox Fruit" , "Sword" , "Wear" , "Agility"
+                                game.Players.LocalPlayer.Character.Humanoid:EquipTool(v)
+                            end
+                        end
+                    end
+                    game:GetService("VirtualInputManager"):SendKeyEvent(true,122,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                    game:GetService("VirtualInputManager"):SendKeyEvent(false,122,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                    wait(.2)
+                    game:GetService("VirtualInputManager"):SendKeyEvent(true,120,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                    game:GetService("VirtualInputManager"):SendKeyEvent(false,120,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                    wait(.2)
+                    game:GetService("VirtualInputManager"):SendKeyEvent(true,99,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                    game:GetService("VirtualInputManager"):SendKeyEvent(false,99,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                end
+            end)
+        end
+end
+end)
+
+--[[
+spawn(function()
+    while wait() do
+        if _G.AutoKillLeviathan then
+            pcall(function()
+                for i, v in pairs(game:GetService("Workspace").SeaBeasts:GetChildren()) do
+                    if v and v.Name == "Leviathan Segment" and v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Health") and v.Health.Value > 0 then
+                        AutoHaki()
+                        HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(1, 450, 45))
+                        game:GetService("VirtualUser"):CaptureController()
+                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280, 672))
+
+                        for i, tool in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+                            if tool:IsA("Tool") and tool.ToolTip == "Melee" then
+                                game.Players.LocalPlayer.Character.Humanoid:EquipTool(tool)
+                            end
+                        end
+
+                        game:GetService("VirtualInputManager"):SendKeyEvent(true, 122, false, game.Players.LocalPlayer.Character.HumanoidRootPart)
+                        game:GetService("VirtualInputManager"):SendKeyEvent(false, 122, false, game.Players.LocalPlayer.Character.HumanoidRootPart)
+                        wait(0.2)
+                        game:GetService("VirtualInputManager"):SendKeyEvent(true, 120, false, game.Players.LocalPlayer.Character.HumanoidRootPart)
+                        game:GetService("VirtualInputManager"):SendKeyEvent(false, 120, false, game.Players.LocalPlayer.Character.HumanoidRootPart)
+                        wait(0.2)
+                        game:GetService("VirtualInputManager"):SendKeyEvent(true, 99, false, game.Players.LocalPlayer.Character.HumanoidRootPart)
+                        game:GetService("VirtualInputManager"):SendKeyEvent(false, 99, false, game.Players.LocalPlayer.Character.HumanoidRootPart)
+                        wait(0.5)
+
+                        for i,v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+                            if v:IsA("Tool") then
+                                if v.ToolTip == "Sword" then
+                                    game.Players.LocalPlayer.Character.Humanoid:EquipTool(v)
+                                end
+                            end
+                        end
+                        game:GetService("VirtualInputManager"):SendKeyEvent(true,122,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                        game:GetService("VirtualInputManager"):SendKeyEvent(false,122,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                        wait(.2)
+                        game:GetService("VirtualInputManager"):SendKeyEvent(true,120,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                        game:GetService("VirtualInputManager"):SendKeyEvent(false,120,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                        wait(.2)
+                        game:GetService("VirtualInputManager"):SendKeyEvent(true,99,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                        game:GetService("VirtualInputManager"):SendKeyEvent(false,99,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                        wait(0.5)
+                        
+                        for i, tool in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+                            if tool:IsA("Tool") and tool.ToolTip == "Blox Fruit" then
+                                game.Players.LocalPlayer.Character.Humanoid:EquipTool(tool)
+                            end
+                        end
+
+                        game:GetService("VirtualInputManager"):SendKeyEvent(true, 122, false, game.Players.LocalPlayer.Character.HumanoidRootPart)
+                        game:GetService("VirtualInputManager"):SendKeyEvent(false, 122, false, game.Players.LocalPlayer.Character.HumanoidRootPart)
+                        wait(0.2)
+                        game:GetService("VirtualInputManager"):SendKeyEvent(true, 120, false, game.Players.LocalPlayer.Character.HumanoidRootPart)
+                        game:GetService("VirtualInputManager"):SendKeyEvent(false, 120, false, game.Players.LocalPlayer.Character.HumanoidRootPart)
+                        wait(0.2)
+                        game:GetService("VirtualInputManager"):SendKeyEvent(true, 99, false, game.Players.LocalPlayer.Character.HumanoidRootPart)
+                        game:GetService("VirtualInputManager"):SendKeyEvent(false, 99, false, game.Players.LocalPlayer.Character.HumanoidRootPart)
+                        
+                        for i,v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+                            if v:IsA("Tool") then
+                                if v.ToolTip == "Gun" then 
+                                    game.Players.LocalPlayer.Character.Humanoid:EquipTool(v)
+                                end
+                            end
+                        end
+                        game:GetService("VirtualInputManager"):SendKeyEvent(true,122,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                        game:GetService("VirtualInputManager"):SendKeyEvent(false,122,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                        wait(.2)
+                        game:GetService("VirtualInputManager"):SendKeyEvent(true,120,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                        game:GetService("VirtualInputManager"):SendKeyEvent(false,120,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                        wait(.2)
+                        game:GetService("VirtualInputManager"):SendKeyEvent(true,99,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                        game:GetService("VirtualInputManager"):SendKeyEvent(false,99,false,game.Players.LocalPlayer.Character.HumanoidRootPart)
+                        wait(0.5)
+                    end
+                end
+            end)
+        end
     end
 end)
 ]]
-
--- Menambahkan fungsi untuk toggle
-SNt:AddToggle("Boat Fly", false, function(value)
-    _G.WalkWaterBoat = value
-end)
-
--- Loop utama
-spawn(function()
-    while task.wait() do
-        pcall(function()
-            if _G.WalkWaterBoat then
-                -- Mengatur posisi boat yang sedang digunakan oleh player agar melayang
-                for _, boat in pairs(game:GetService("Workspace").Boats:GetChildren()) do
-                    if boat:IsA("Model") and boat:FindFirstChild("PrimaryPart") then
-                        for _, part in pairs(boat:GetChildren()) do
-                            if part:IsA("VehicleSeat") and part.Occupant then
-                                -- Jika ada pemain yang menggunakan boat, buat terbang
-                                local boatPosition = boat.PrimaryPart.Position
-                                boat.PrimaryPart.Position = Vector3.new(boatPosition.X, boatPosition.Y + 50, boatPosition.Z)
-                                break
-                            end
-                        end
-                    end
-                end
-            else
-                -- Mengembalikan posisi boat yang sedang digunakan oleh player ke ketinggian normal
-                for _, boat in pairs(game:GetService("Workspace").Boats:GetChildren()) do
-                    if boat:IsA("Model") and boat:FindFirstChild("PrimaryPart") then
-                        for _, part in pairs(boat:GetChildren()) do
-                            if part:IsA("VehicleSeat") and part.Occupant then
-                                -- Jika ada pemain yang menggunakan boat, kembalikan ke posisi normal
-                                local boatPosition = boat.PrimaryPart.Position
-                                boat.PrimaryPart.Position = Vector3.new(boatPosition.X, 5, boatPosition.Z)
-                                break
-                            end
-                        end
-                    end
-                end
-            end
-        end)
-    end
-end)
-
-
-
-
-
-
-SNt:AddToggle("Auto Sail Rough Sea",_G.BiirTrax,function(state)
-    if state then
-        _G.BiirTrax = true
-    else
-        _G.BiirTrax = false
-    end
-
-
-if _G.BiirTrax then
-
-game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-16921.853515625, 9.0863618850708, 433.9601135253906) 
-wait(0.5) 
-
-local args = {
-    [1] = "BuyBoat",
-    [2] = "PirateBrigade"
-}
-
-game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(args))
-
-function two(gotoCFrame) --- Tween
-      pcall(function()
-          game.Players.LocalPlayer.Character.Humanoid.Sit = false
-          game.Players.LocalPlayer.Character.HumanoidRootPart.Anchored = false
-      end)
-      if (game:GetService("Players")["LocalPlayer"].Character.HumanoidRootPart.Position - gotoCFrame.Position).Magnitude <= 200 then
-          pcall(function() 
-              tweenz:Cancel()
-          end)
-          game:GetService("Players")["LocalPlayer"].Character.HumanoidRootPart.CFrame = gotoCFrame
-      else
-          local tween_s = game:service"TweenService"
-          local info = TweenInfo.new((game:GetService("Players")["LocalPlayer"].Character.HumanoidRootPart.Position - gotoCFrame.Position).Magnitude/325, Enum.EasingStyle.Linear)
-           tween, err = pcall(function()
-              tweenz = tween_s:Create(game.Players.LocalPlayer.Character["HumanoidRootPart"], info, {CFrame = gotoCFrame})
-              tweenz:Play()
-          end)
-          if not tween then return err end
-      end
-      function _TweenCanCle()
-          tweenz:Cancel()
-      end
-  
-end
-two(CFrame.new(-30939.830078125, 3.729933261871338, 9256.4208984375))
-
-for _,v in next, workspace.Boats.PirateBrigade:GetDescendants() do
-    if v.Name:find("VehicleSeat") then
-    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.CFrame
-    end
-end
-end
-end)
-
-spawn(function()
-    while wait() do
-        pcall(function()
-            if _G.BiirTrax then
-                for _, v in next, workspace.Boats.PirateBrigade:GetDescendants() do
-                    if v.Name:find("VehicleSeat") then
-                        wait(5) 
-                        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.CFrame
-                        break
-                    end
-                end
-
-                local vehicleSeat = nil
-                local enemyTypes = {
-                    {name = "Terrorshark", variable = "Terrorshark"},
-                    {name = "Shark", variable = "Shark"},
-                    {name = "Piranha", variable = "Piranha"},
-                    {name = "FishBoat", variable = "FishBoat"}, 
-                }
-
-                for _, v in next, workspace.Boats.PirateBrigade:GetDescendants() do
-                    if v.Name:find("VehicleSeat") then
-                        vehicleSeat = v
-                        wait(0.2) 
-
-                        for _, enemyType in pairs(enemyTypes) do
-                            local enemyName = enemyType.name
-                            local enemyVariable = enemyType.variable
-
-                            if game:GetService("Workspace").Enemies:FindFirstChild(enemyName) then
-                                game.Players.LocalPlayer.Character.Humanoid.Sit = false
-                                wait(0.1) 
-                                _G[enemyVariable] = true
-
-                                -- Menunggu musuh mati
-                                while game:GetService("Workspace").Enemies:FindFirstChild(enemyName) do
-                                    wait(0.2) 
-                                end
-
-                                _G[enemyVariable] = false
-                                game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = vehicleSeat.CFrame
-                            end
-                        end
-
-                        if game.Workspace._WorldOrigin.Locations:FindFirstChild('Frozen Dimension') then
-                            _G.BiirTrax = false
-                            wait(0.5)
-                            game.Players.LocalPlayer.Character.Humanoid.Sit = false
-                            wait(0.5)
-                            _G.Frozen = true
-                        end
-                    end
-                end
-            end
-        end)
-    end
-end)
-
-spawn(function()
-    while wait() do
-        pcall(function()
-            if _G.BiirTrax then
-                local batuLaut = {"SmallGroup", "SmallCluster", "MediumGroup", "MediumFlat", "Large", "Largest"}
-
-                for _, v in pairs(workspace:GetChildren()) do
-                    if table.find(batuLaut, v.Name) and v:IsA("Model") then
-                        for _, part in pairs(v:GetDescendants()) do
-                            if part:IsA("BasePart") then
-                                part.CanCollide = false
-                            end
-                        end
-                    end
-                end
-            end
-        end)
-    end
-end)
-
-spawn(function()
-    while wait() do
-        pcall(function()
-            if _G.BiirTrax then
-                wait(0.8) 
-                local targetModelNames = "PirateBrigade"
-                local models = workspace.Boats:GetChildren()
-
-                for _, targetModelName in ipairs(targetModelNames) do
-                    local targetModel = workspace:FindFirstChild(targetModelName)
-
-                    if targetModel then
-                        local speed = 10.5
-                        local forwardDirection = targetModel.PrimaryPart.CFrame.lookVector
-                        local targetPosition = targetModel.PrimaryPart.Position + forwardDirection * 10
-                        
-                        while (targetModel.PrimaryPart.Position - targetPosition).Magnitude > 0.1 do
-                            targetModel:SetPrimaryPartCFrame(targetModel.PrimaryPart.CFrame + forwardDirection * speed)
-                            task.wait()
-                            if not _G.BiirTrax then
-                                break
-                            end
-                        end
-                    end
-                end
-            end
-        end)
-    end
-end)
-
-
-SNt:AddSeperator("Frozen & Kitsune")
 
    SNt:AddToggle("Teleport Frozen Dimension",_G.AutoFrozenDimension,function(value)
     _G.AutoFrozenDimension = value
     StopTween(_G.AutoFrozenDimension)
     end)
+
+    SNt:AddSeperator("Kitsune Island")
     
     SNt:AddToggle("Teleport Kitsune Island",_G.TeleportKitsune,function(value)
      _G.TeleportKitsune = value
@@ -8681,23 +10195,26 @@ SNt:AddSeperator("Frozen & Kitsune")
          end
      end)
     
-     SNt:AddToggle("Auto Collect Azure Ember",_G.CollectAzure,function(value)
+     
+     SNt:AddToggle("Auto Collect Azure Ember", _G.CollectAzure, function(value)
          _G.CollectAzure = value
-         end)
-    
-         spawn(function()
-             while wait() do
-                 if _G.CollectAzure then
-                     pcall(function()
-                         if game:GetService("Workspace"):FindFirstChild("AttachedAzureEmber") then
-                             fastpos(game:GetService("Workspace"):WaitForChild("EmberTemplate"):FindFirstChild("Part").CFrame)
-                         end
-                     end)
-                 end
-             end
-         end)
-    
-     _G.SetToTradeAureEmber = 20
+     end)
+     
+     spawn(function()
+        while wait() do
+            if _G.CollectAzure then
+                pcall(function()
+                    if game:GetService("Workspace"):FindFirstChild("AttachedAzureEmber") then
+                        fastpos(game:GetService("Workspace"):WaitForChild("EmberTemplate"):FindFirstChild("Part").CFrame)
+                    end
+                end)
+            end
+        end
+    end)
+     
+     
+
+     _G.SetToTradeAureEmber = 24
      SNt:AddSlider("Set Trade Azure Ember", 10, 25, _G.SetToTradeAureEmber, function(v)
          _G.SetToTradeAureEmber = v
      end)
@@ -8727,361 +10244,7 @@ SNt:AddSeperator("Frozen & Kitsune")
                  end
              end
          end)
-
-
-
-   M:AddSeperator("Farm Level Mastery")
-    
-    M:AddToggle("Blox Fruit Mastery",_G.AutoFarmFruitMastery,function(value)
-        _G.AutoFarmFruitMastery = value
-        StopTween(_G.AutoFarmFruitMastery)
-        if _G.AutoFarmFruitMastery == false then
-            UseSkill = false 
-        end
-    end)
-    
-    spawn(function()
-        while wait() do
-            if _G.AutoFarmFruitMastery then
-                pcall(function()
-                    local QuestTitle = game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text
-                    if not string.find(QuestTitle, NameMon) then
-                        Magnet = false
-                        UseSkill = false
-                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("AbandonQuest")
-                    end
-                    if game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == false then
-                        StartMasteryFruitMagnet = false
-                        UseSkill = false
-                        CheckQuest()
-                        repeat wait()
-                            TP1(CFrameQuest)
-                        until (CFrameQuest.Position - game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 3 or not _G.AutoFarmFruitMastery
-                        if (CFrameQuest.Position - game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 5 then
-                            wait(0.1)
-                            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest",NameQuest,LevelQuest)
-                            wait(0.1)
-                        end
-                    elseif game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == true then
-                        CheckQuest()
-                        if game:GetService("Workspace").Enemies:FindFirstChild(Mon) then
-                            for i,v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
-                                if v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
-                                    if v.Name == Mon then
-                                        if string.find(game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text, NameMon) then
-                                            HealthMs = v.Humanoid.MaxHealth * _G.Kill_At/100
-                                            repeat task.wait()
-                                                if v.Humanoid.Health <= HealthMs then
-                                                    AutoHaki()
-                                                    EquipWeapon(game:GetService("Players").LocalPlayer.Data.DevilFruit.Value)
-                                                    TP1(v.HumanoidRootPart.CFrame * CFrame.new(0,10,0))
-                                                    v.HumanoidRootPart.CanCollide = false
-                                                    PosMonMasteryFruit = v.HumanoidRootPart.CFrame
-                                                    v.Humanoid.WalkSpeed = 2
-                                                    v.Head.CanCollide = false
-                                                    UseSkill = true
-                                                else           
-                                                    UseSkill = false 
-                                                    AutoHaki()
-                                                    EquipWeapon(_G.SelectWeapon)
-                                                    TP1(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                                    v.HumanoidRootPart.CanCollide = false
-                                                    v.HumanoidRootPart.Size = Vector3.new(50,50,50)
-                                                    PosMonMasteryFruit = v.HumanoidRootPart.CFrame
-                                                    v.Humanoid.WalkSpeed = 2
-                                                    v.Head.CanCollide = false
-                                                end
-                                                StartMasteryFruitMagnet = true
-                                                game:GetService'VirtualUser':CaptureController()
-                                                game:GetService'VirtualUser':Button1Down(Vector2.new(1280, 672))
-                                            until not _G.AutoFarmFruitMastery or v.Humanoid.Health <= 0 or not v.Parent or game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == false
-                                        else
-                                            UseSkill = false
-                                            StartMasteryFruitMagnet = false
-                                            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("AbandonQuest")
-                                        end
-                                    end
-                                end
-                            end
-                        else
-                            TP1(CFrameMon)
-                            StartMasteryFruitMagnet = false   
-                            UseSkill = false 
-                            local Mob = game:GetService("ReplicatedStorage"):FindFirstChild(Mon) 
-                            if Mob then
-                                TP1(Mob.HumanoidRootPart.CFrame * CFrame.new(0,0,10))
-                            else
-                                if game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.CFrame.Y <= 1 then
-                                    game:GetService("Players").LocalPlayer.Character.Humanoid.Jump = true
-                                    task.wait()
-                                    game:GetService("Players").LocalPlayer.Character.Humanoid.Jump = false
-                                end
-                            end
-                        end
-                    end
-                end)
-            end
-        end
-    end)
-    
-    spawn(function()
-        while wait() do
-            if UseSkill then
-                pcall(function()
-                    CheckQuest()
-                    for i,v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
-                        if game:GetService("Players").LocalPlayer.Character:FindFirstChild(game:GetService("Players").LocalPlayer.Data.DevilFruit.Value) then
-                            MasBF = game:GetService("Players").LocalPlayer.Character[game:GetService("Players").LocalPlayer.Data.DevilFruit.Value].Level.Value
-                        elseif game:GetService("Players").LocalPlayer.Backpack:FindFirstChild(game:GetService("Players").LocalPlayer.Data.DevilFruit.Value) then
-                            MasBF = game:GetService("Players").LocalPlayer.Backpack[game:GetService("Players").LocalPlayer.Data.DevilFruit.Value].Level.Value
-                        end
-                        if game:GetService("Players").LocalPlayer.Character:FindFirstChild("Dragon-Dragon") then                      
-                            if _G.SkillZ then
-                                local args = {
-                                    [1] = PosMonMasteryFruit.Position
-                                }
-                                game:GetService("Players").LocalPlayer.Character[game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Tool").Name].RemoteEvent:FireServer(unpack(args))                        
-                                game:GetService("VirtualInputManager"):SendKeyEvent(true,"Z",false,game)
-                                game:GetService("VirtualInputManager"):SendKeyEvent(false,"Z",false,game)
-                            end
-                            if _G.SkillX then          
-                                local args = {
-                                    [1] = PosMonMasteryFruit.Position
-                                }
-                                game:GetService("Players").LocalPlayer.Character[game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Tool").Name].RemoteEvent:FireServer(unpack(args))               
-                                game:GetService("VirtualInputManager"):SendKeyEvent(true,"X",false,game)
-                                game:GetService("VirtualInputManager"):SendKeyEvent(false,"X",false,game)
-                            end
-                            if _G.SkillC then
-                                local args = {
-                                    [1] = PosMonMasteryFruit.Position
-                                }
-                                game:GetService("Players").LocalPlayer.Character[game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Tool").Name].RemoteEvent:FireServer(unpack(args))                          
-                                game:GetService("VirtualInputManager"):SendKeyEvent(true,"C",false,game)
-                                wait(2)
-                                game:GetService("VirtualInputManager"):SendKeyEvent(false,"C",false,game)
-                            end
-                        elseif game:GetService("Players").LocalPlayer.Character:FindFirstChild("Venom-Venom") then   
-                            if _G.SkillZ then
-                                local args = {
-                                    [1] = PosMonMasteryFruit.Position
-                                }
-                                game:GetService("Players").LocalPlayer.Character[game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Tool").Name].RemoteEvent:FireServer(unpack(args))                        
-                                game:GetService("VirtualInputManager"):SendKeyEvent(true,"Z",false,game)
-                                game:GetService("VirtualInputManager"):SendKeyEvent(false,"Z",false,game)
-                            end
-                            if _G.SkillX then        
-                                local args = {
-                                    [1] = PosMonMasteryFruit.Position
-                                }
-                                game:GetService("Players").LocalPlayer.Character[game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Tool").Name].RemoteEvent:FireServer(unpack(args))               
-                                game:GetService("VirtualInputManager"):SendKeyEvent(true,"X",false,game)
-                                game:GetService("VirtualInputManager"):SendKeyEvent(false,"X",false,game)
-                            end
-                            if _G.SkillC then 
-                                local args = {
-                                    [1] = PosMonMasteryFruit.Position
-                                }
-                                game:GetService("Players").LocalPlayer.Character[game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Tool").Name].RemoteEvent:FireServer(unpack(args))                          
-                                game:GetService("VirtualInputManager"):SendKeyEvent(true,"C",false,game)
-                                wait(2)
-                                game:GetService("VirtualInputManager"):SendKeyEvent(false,"C",false,game)
-                            end
-                        elseif game:GetService("Players").LocalPlayer.Character:FindFirstChild("Human-Human: Buddha") then
-                            if _G.SkillZ and game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.Size == Vector3.new(2, 2.0199999809265, 1) then
-                                local args = {
-                                    [1] = PosMonMasteryFruit.Position
-                                }
-                                game:GetService("Players").LocalPlayer.Character[game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Tool").Name].RemoteEvent:FireServer(unpack(args))                         
-                                game:GetService("VirtualInputManager"):SendKeyEvent(true,"Z",false,game)
-                                game:GetService("VirtualInputManager"):SendKeyEvent(false,"Z",false,game)
-                            end
-                            if _G.SkillX then
-                                local args = {
-                                    [1] = PosMonMasteryFruit.Position
-                                }
-                                game:GetService("Players").LocalPlayer.Character[game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Tool").Name].RemoteEvent:FireServer(unpack(args))                           
-                                game:GetService("VirtualInputManager"):SendKeyEvent(true,"X",false,game)
-                                game:GetService("VirtualInputManager"):SendKeyEvent(false,"X",false,game)
-                            end
-                            if _G.SkillC then
-                                local args = {
-                                    [1] = PosMonMasteryFruit.Position
-                                }
-                                game:GetService("Players").LocalPlayer.Character[game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Tool").Name].RemoteEvent:FireServer(unpack(args))                           
-                                game:GetService("VirtualInputManager"):SendKeyEvent(true,"C",false,game)
-                                game:GetService("VirtualInputManager"):SendKeyEvent(false,"C",false,game)
-                            end
-                            if _G.SkillV then
-                                local args = {
-                                    [1] = PosMonMasteryFruit.Position
-                                }
-                                game:GetService("Players").LocalPlayer.Character[game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Tool").Name].RemoteEvent:FireServer(unpack(args))
-                                game:GetService("VirtualInputManager"):SendKeyEvent(true,"V",false,game)
-                                game:GetService("VirtualInputManager"):SendKeyEvent(false,"V",false,game)
-                            end
-                        elseif game:GetService("Players").LocalPlayer.Character:FindFirstChild(game:GetService("Players").LocalPlayer.Data.DevilFruit.Value) then
-                            if _G.SkillZ then 
-                                local args = {
-                                    [1] = PosMonMasteryFruit.Position
-                                }
-                                game:GetService("Players").LocalPlayer.Character[game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Tool").Name].RemoteEvent:FireServer(unpack(args))                         
-                                game:GetService("VirtualInputManager"):SendKeyEvent(true,"Z",false,game)
-                                game:GetService("VirtualInputManager"):SendKeyEvent(false,"Z",false,game)
-                            end
-                            if _G.SkillX then
-                                local args = {
-                                    [1] = PosMonMasteryFruit.Position
-                                }
-                                game:GetService("Players").LocalPlayer.Character[game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Tool").Name].RemoteEvent:FireServer(unpack(args))                           
-                                game:GetService("VirtualInputManager"):SendKeyEvent(true,"X",false,game)
-                                game:GetService("VirtualInputManager"):SendKeyEvent(false,"X",false,game)
-                            end
-                            if _G.SkillC then
-                                local args = {
-                                    [1] = PosMonMasteryFruit.Position
-                                }
-                                game:GetService("Players").LocalPlayer.Character[game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Tool").Name].RemoteEvent:FireServer(unpack(args))                           
-                                game:GetService("VirtualInputManager"):SendKeyEvent(true,"C",false,game)
-                                game:GetService("VirtualInputManager"):SendKeyEvent(false,"C",false,game)
-                            end
-                            if _G.SkillV then
-                                local args = {
-                                    [1] = PosMonMasteryFruit.Position
-                                }
-                                game:GetService("Players").LocalPlayer.Character[game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Tool").Name].RemoteEvent:FireServer(unpack(args))
-                                game:GetService("VirtualInputManager"):SendKeyEvent(true,"V",false,game)
-                                game:GetService("VirtualInputManager"):SendKeyEvent(false,"V",false,game)
-                            end
-                        end
-                    end
-                end)
-            end
-        end
-    end)
-    
-    spawn(function()
-        game:GetService("RunService").RenderStepped:Connect(function()
-            pcall(function()
-                if UseSkill then
-                    for i,v in pairs(game:GetService("Players").LocalPlayer.PlayerGui.Notifications:GetChildren()) do
-                        if v.Name == "NotificationTemplate" then
-                            if string.find(v.Text,"Skill locked!") then
-                                v:Destroy()
-                            end
-                        end
-                    end
-                end
-            end)
-        end)
-    end)
-    
-    spawn(function()
-        pcall(function()
-            game:GetService("RunService").RenderStepped:Connect(function()
-                if UseSkill then
-                    local args = {
-                        [1] = PosMonMasteryFruit.Position
-                    }
-                    game:GetService("Players").LocalPlayer.Character[game:GetService("Players").LocalPlayer.Data.DevilFruit.Value].RemoteEvent:FireServer(unpack(args))
-                end
-            end)
-        end)
-    end)
-    
-    M:AddToggle("Auto Gun Mastery (manual skill)",_G.AutoFarmGunMastery,function(value)
-        _G.AutoFarmGunMastery = value
-        _G.AutoClick = value
-        StopTween(_G.AutoFarmGunMastery)
-    end)
-    
-    spawn(function()
-        pcall(function()
-            while wait() do
-                if _G.AutoFarmGunMastery then
-                    local QuestTitle = game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text
-                    if not string.find(QuestTitle, NameMon) then
-                        Magnet = false                                      
-                        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("AbandonQuest")
-                    end
-                    if game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == false then
-                        StartMasteryGunMagnet = false
-                        CheckQuest()
-                            if BypassTP then
-                                if (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - CFrameQuest.Position).Magnitude > 1500 then
-                                    BTP(CFrameQuest)
-                                elseif (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - CFrameQuest.Position).Magnitude <= 1500 then
-                                    TP1(CFrameQuest)
-                                else
-                                    TP1(CFrameQuest)
-                                end
-                            else
-                                TP1(CFrameQuest)
-                            end
-                        if (CFrameQuest.Position - game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 10 then
-                            wait(1.2)
-                            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQuest)
-                        end
-                    elseif game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == true then
-                        CheckQuest()
-                        if game:GetService("Workspace").Enemies:FindFirstChild(Mon) then
-                            pcall(function()
-                                for i,v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
-                                    if v.Name == Mon then
-                                        repeat task.wait()
-                                            if string.find(game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text, NameMon) then
-                                                HealthMin = v.Humanoid.MaxHealth * _G.Kill_At/100
-                                                if v.Humanoid.Health <= HealthMin then                                                
-                                                    EquipWeapon(SelectWeaponGun)
-                                                    TP1(v.HumanoidRootPart.CFrame * CFrame.new(0,0,10))
-                                                    v.Humanoid.WalkSpeed = 2
-                                                    v.HumanoidRootPart.CanCollide = false
-                                                    v.HumanoidRootPart.Size = Vector3.new(2,2,1)
-                                                    v.Head.CanCollide = false                                 
-                                                    local args = {
-                                                        [1] = v.HumanoidRootPart.Position,
-                                                        [2] = v.HumanoidRootPart
-                                                    }
-                                                    game:GetService("Players").LocalPlayer.Character[SelectWeaponGun].RemoteFunctionShoot:InvokeServer(unpack(args))
-                                                else
-                                                    AutoHaki()
-                                                    EquipWeapon(_G.SelectWeapon)
-                                                    v.Humanoid.WalkSpeed = 2
-                                                    v.HumanoidRootPart.CanCollide = false
-                                                    v.Head.CanCollide = false               
-                                                    v.HumanoidRootPart.Size = Vector3.new(60,60,60)
-                                                    TP1(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                                end
-                                                StartMasteryGunMagnet = true 
-                                                PosMonMasteryGun = v.HumanoidRootPart.CFrame
-                                            else
-                                                StartMasteryGunMagnet = false
-                                                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("AbandonQuest")
-                                            end
-                                        until v.Humanoid.Health <= 0 or not _G.AutoFarmGunMastery or game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == false
-                                        StartMasteryGunMagnet = false
-                                    end
-                                end
-                            end)
-                        else
-                           TP1(CFrameMon)
-                            StartMasteryGunMagnet = false
-                            local Mob = game:GetService("ReplicatedStorage"):FindFirstChild(Mon) 
-                            if Mob then
-                                TP1(Mob.HumanoidRootPart.CFrame * CFrame.new(0,0,10))
-                            else
-                                if game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.CFrame.Y <= 1 then
-                                    game:GetService("Players").LocalPlayer.Character.Humanoid.Jump = true
-                                    task.wait()
-                                    game:GetService("Players").LocalPlayer.Character.Humanoid.Jump = false
-                                end
-                            end
-                        end 
-                    end
-                end
-            end
-        end)
-    end)
+-- baru copy paste part2    
     
 
     
@@ -9111,8 +10274,7 @@ SNt:AddSeperator("Frozen & Kitsune")
                                         v.Humanoid.WalkSpeed = 2
                                         v.HumanoidRootPart.Size = Vector3.new(50,50,50)
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                         sethiddenproperty(game.Players.LocalPlayer,"SimulationRadius",math.huge)
                                     until not _G.AutoBudySword or not v.Parent or v.Humanoid.Health <= 0
                                 end
@@ -9159,8 +10321,7 @@ SNt:AddSeperator("Frozen & Kitsune")
                                         v.Humanoid.WalkSpeed = 2
                                         v.HumanoidRootPart.Size = Vector3.new(50,50,50)
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(5,40,5))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                         sethiddenproperty(game.Players.LocalPlayer,"SimulationRadius",math.huge)
                                     until not  _G.AutoOderSword or not v.Parent or v.Humanoid.Health <= 0
                                 end
@@ -9831,8 +10992,7 @@ M:AddToggle("Taken Tushita", _G.Autotushita,function(value)
                                         v.Humanoid.WalkSpeed = 2
                                         v.HumanoidRootPart.Size = Vector3.new(50,50,50)
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                         sethiddenproperty(game.Players.LocalPlayer,"SimulationRadius",math.huge)
                                     until not  _G.Autotushita or not v.Parent or v.Humanoid.Health <= 0
                                 end
@@ -9879,8 +11039,7 @@ M:AddToggle("Taken Tushita", _G.Autotushita,function(value)
                                         v.Humanoid.WalkSpeed = 2
                                         v.HumanoidRootPart.Size = Vector3.new(50,50,50)
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                         sethiddenproperty(game.Players.LocalPlayer,"SimulationRadius",math.huge)
                                     until not  _G.AutoCarvender or not v.Parent or v.Humanoid.Health <= 0
                                 end
@@ -9964,8 +11123,7 @@ end)
                                         v.Humanoid.WalkSpeed = 2
                                         v.HumanoidRootPart.Size = Vector3.new(50,50,50)
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                         sethiddenproperty(game.Players.LocalPlayer,"SimulationRadius",math.huge)
                                     until not  _G.AutoTwinHook or not v.Parent or v.Humanoid.Health <= 0
                                 end
@@ -10231,8 +11389,7 @@ end)
                                         v.Humanoid.WalkSpeed = 2
                                         v.HumanoidRootPart.Size = Vector3.new(50,50,50)
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                         sethiddenproperty(game.Players.LocalPlayer,"SimulationRadius",math.huge)
                                     until not  _G.Auto_Dragon_Trident or not v.Parent or v.Humanoid.Health <= 0
                                 end
@@ -10280,8 +11437,7 @@ end)
                                         v.Humanoid.WalkSpeed = 2
                                         v.HumanoidRootPart.Size = Vector3.new(50,50,50)
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                         sethiddenproperty(game.Players.LocalPlayer,"SimulationRadius",math.huge)
                                     until not  _G.Autowaden or not v.Parent or v.Humanoid.Health <= 0
                                 end
@@ -10328,8 +11484,7 @@ end)
                                         v.Humanoid.WalkSpeed = 2
                                         v.HumanoidRootPart.Size = Vector3.new(50,50,50)
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                         sethiddenproperty(game.Players.LocalPlayer,"SimulationRadius",math.huge)
                                     until not  _G.Autogay or not v.Parent or v.Humanoid.Health <= 0
                                 end
@@ -10376,8 +11531,7 @@ end)
                                         v.Humanoid.WalkSpeed = 2
                                         v.HumanoidRootPart.Size = Vector3.new(50,50,50)
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                         sethiddenproperty(game.Players.LocalPlayer,"SimulationRadius",math.huge)
                                     until not  _G.Autopole or not v.Parent or v.Humanoid.Health <= 0
                                 end
@@ -10466,8 +11620,7 @@ end)
                                         v.Humanoid.WalkSpeed = 2
                                         v.HumanoidRootPart.Size = Vector3.new(50,50,50)
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                         sethiddenproperty(game.Players.LocalPlayer,"SimulationRadius",math.huge)
                                     until not  _G.Autosaw or not v.Parent or v.Humanoid.Health <= 0
                                 end
@@ -10551,8 +11704,9 @@ end)
                                         StartMagnetBoneMon = true
                                         PosMonBone = v.HumanoidRootPart.CFrame
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
+                                        --game:GetService("VirtualUser"):CaptureController()
+                                        --game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
                                     until not _G.Auto_Bone or not v.Parent or v.Humanoid.Health <= 0
                                 end
                             end
@@ -10670,7 +11824,7 @@ end)
                 if _G.AutoObservation then
                     if game:GetService("Players").LocalPlayer.VisionRadius.Value >= 3000 then
                         game:GetService("StarterGui"):SetCore("SendNotification", {
-                            Icon = "rbxassetid://16058297648";
+                            Icon = "rbxassetid://80725673395393";
                             Title = "Status Observation", 
                             Text = "You Have Max Points"
                         })
@@ -10955,23 +12109,6 @@ end)
     
     M:AddSeperator("Legendary Sword")
 
-    spawn(function()
-        pcall(function()
-            while wait() do
-                if game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("LegendarySwordDealer", "1") then
-                    LegendSwords:Set("Legend Sword : Shisui")
-                elseif game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("LegendarySwordDealer","2") then
-                    LegendSwords:Set("Legend Sword : Wando")
-                elseif game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("LegendarySwordDealer","3") then
-                    LegendSwords:Set("Legend Sword : Saddi")
-                else
-                    LegendSwords:Set("Sword Not Ready : 🔴")
-                end
-            end
-        end)
-       end)
-       
-       LegendSwords = M:AddLabel("Sword Not Ready : 🔴")
     
     M:AddToggle("Buy Legendary Sword",_G.AutoBuyLegendarySword,function(value)
         _G.AutoBuyLegendarySword = value
@@ -11011,15 +12148,17 @@ end)
     
     M:AddSeperator("Enchancement Colour")
 
-    local KuyKoben = game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("CommF_"):InvokeServer("ColorsDealer", "1")
+    local KuyKoben = game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("CommF_"):InvokeServer("ColorsDealer", "1") or 
+                     game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("CommF_"):InvokeServer("ColorsDealer", "2")
  
 spawn(function()
  pcall(function()
      while wait() do
-         if game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("CommF_"):InvokeServer("ColorsDealer", "1") then
+         if game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("CommF_"):InvokeServer("ColorsDealer", "1") or 
+            game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("CommF_"):InvokeServer("ColorsDealer", "2") then
              ColorHaki:Set(KuyKoben)
          else
-             ColorHaki:Set("Haki Dealer Not Found")
+             ColorHaki:Set("Haki Dealer : 🔴")
          end
      end
  end)
@@ -12433,13 +13572,14 @@ end)
 
 RaceV4:AddToggle("Kill Player After Trial!",false,function(value)
     _G.KillAfterTrials = value
+    _G.AutoClick = value
     StopTween(_G.KillAfterTrials)
 end)
 
 spawn(function()
     while wait() do 
         pcall(function()
-            if _G.KillAfterTrials then
+            if _G.KillAfterTrials and _G.AutoClick then
                 for i,v in pairs(game:GetService("Workspace").Characters:GetChildren()) do
                     if v.Name ~= game.Players.LocalPlayer.Name and (v.HumanoidRootPart.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 100 then
                         if v.Humanoid.Health > 0 then
@@ -12448,6 +13588,7 @@ spawn(function()
                                 EquipWeapon(_G.SelectWeapon)
                                 NameTarget = v.Name
                                 TP1(v.HumanoidRootPart.CFrame * CFrame.new(0,0,5))
+                                v.activeController.timeToNextAttack = 0
                                 v.HumanoidRootPart.CanCollide = false
                                 v.Head.CanCollide = false
                                 v.HumanoidRootPart.Size = Vector3.new(60, 60, 60)
@@ -12460,6 +13601,7 @@ spawn(function()
         end)
     end
 end)
+
 
 RaceV4:AddSeperator("Auto Quest Train V4")
 
@@ -12737,7 +13879,51 @@ end
 
     
     P:AddSeperator("Aimbot")
-     
+    
+    Playerslist = {}
+    
+    for i,v in pairs(game:GetService("Players"):GetChildren()) do
+        table.insert(Playerslist,v.Name)
+    end
+    
+    local PlayerSelectAimbot = P:AddDropdown("Select Player",Playerslist,function(value)
+        PlayerSelectAimbot = value
+    end)
+    
+    P:AddButton("Refresh Player",function()
+        Playerslist = {}
+        PlayerSelectAimbot:Clear()
+        for i,v in pairs(game:GetService("Players"):GetChildren()) do  
+            PlayerSelectAimbot:Add(v.Name)
+        end
+    end)
+
+    P:AddToggle("Auto Aim Lock (beta)", _G.LockTarget, function(value)
+        _G.LockTarget = value
+    end)
+
+    spawn(function()
+        pcall(function()
+            while task.wait() do
+                if _G.LockTarget and PlayerSelectAimbot ~= nil 
+                    and game.Players:FindFirstChild(PlayerSelectAimbot) 
+                    and game.Players.LocalPlayer.Character:FindFirstChildOfClass("Tool") 
+                    and game.Players.LocalPlayer.Character[game.Players.LocalPlayer.Character:FindFirstChildOfClass("Tool").Name]:FindFirstChild("RemoteEvent") then
+                    
+                    local targetPosition = game.Players:FindFirstChild(PlayerSelectAimbot).Character.HumanoidRootPart.Position
+
+                    local args = {
+                        [1] = targetPosition 
+                    }
+
+                    game.Players.LocalPlayer.Character:FindFirstChildOfClass("Tool").RemoteEvent:FireServer(unpack(args))
+                end
+            end
+        end)
+    end)
+
+
+     --[[
     spawn(function()
         while wait() do
             pcall(function()
@@ -12754,7 +13940,7 @@ end
             end)
         end
     end)
-    
+    ]]
     P:AddToggle("Aimbot Gun",false,function(value)
         _G.Aimbot_Gun = value
     end)
@@ -13097,6 +14283,7 @@ end)
         end)
     end)
     
+    
     R:AddLine()
     
     if World2 then
@@ -13145,8 +14332,7 @@ end)
                                         v.Humanoid.WalkSpeed = 2
                                         v.HumanoidRootPart.Size = Vector3.new(50,50,50)
                                         HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                        game:GetService("VirtualUser"):CaptureController()
-                                        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                        module:attack()
                                         sethiddenproperty(game.Players.LocalPlayer,"SimulationRadius",math.huge)
                                     until not  _G.AutoOderSword or not v.Parent or v.Humanoid.Health <= 0
                                 end
@@ -13371,10 +14557,10 @@ end)
                     HyperCahaya(CFrame.new(-1884.7747802734375, 19.327526092529297, -11666.8974609375))
                 elseif _G.SelectIsland == "Cocoa Island" then
                     HyperCahaya(CFrame.new(87.94276428222656, 73.55451202392578, -12319.46484375))
-                elseif _G.SelectIsland == "Candy Island NewÃ¢â€ºâ€ž" then
+                elseif _G.SelectIsland == "Candy Island New" then
                     HyperCahaya(CFrame.new(-1014.4241943359375, 149.11068725585938, -14555.962890625))
                 elseif _G.SelectIsland == "Tiki Outpost" then
-                    HyperCahaya(CFrame.new(-15852.91796875, 485.5301818847656, 452.25537109375))
+                    HyperCahaya(CFrame.new(-16483, 600, 542)) ---15852.91796875, 485.5301818847656, 452.25537109375
                 end
             until not _G.TeleportIsland
         end
@@ -13432,7 +14618,11 @@ end)
             "Trevor",
             "Elite Hunter",
             "Player Hunter",
-            "Uzoth"
+            "Uzoth",
+            "Spy",
+            "Dragon Talon Sage",
+            "Shark Hunter",
+            "Shafi"
             },function(value)
             _G.SelectNPC = value
         end)
@@ -13516,6 +14706,14 @@ end)
                     HyperCahaya(CFrame.new(-5559, 314, -2840))
                 elseif _G.SelectNPC == "Uzoth" then
                     HyperCahaya(CFrame.new(-9785, 852, 6667))
+                elseif _G.SelectNPC == "Spy" then
+                    HyperCahaya(CFrame.new(-16468, 527, 538))
+                elseif _G.SelectNPC == "Dragon Talon Sage" then
+                    HyperCahaya(CFrame.new(-15904, 483, 945))
+                elseif _G.SelectNPC == "Shark Hunter" then
+                    HyperCahaya(CFrame.new(-16525, 108, 744))
+                elseif _G.SelectNPC == "Shafi" then
+                    HyperCahaya(CFrame.new(-16516, 23, -192))
                 end
             until not _G.TeleportNPC
         end
@@ -14132,17 +15330,20 @@ end)
         "String-String",
         "Bird-Bird: Phoenix",
         "Rumble-Rumble",
-        "Sound-Sound", 
-        "Pain-Pain", 
+        "Paw-Paw",
         "Gravity-Gravity",
-        "Mammoth-Mammoth", 
         "Dough-Dough",
-        "Venom-Venom",
         "Shadow-Shadow",
+        "Venom-Venom",
         "Control-Control",
         "Soul-Soul",
         "Dragon-Dragon",
-        "Leopard-Leopard"
+        "Leopard-Leopard",
+        "Kitsune-Kitsune",
+        "Spirit-Spirit",
+        "Mammoth-Mammoth",
+        "T-Rex-T-Rex",
+        "Sound-Sound"
     }
     
     local Remote_GetFruits = game.ReplicatedStorage:FindFirstChild("Remotes").CommF_:InvokeServer("GetFruits");
@@ -14163,8 +15364,86 @@ end)
     D:AddToggle("Auto Buy Fruit Dealer",_G.AutoBuyFruitSniper,function(value)
         _G.AutoBuyFruitSniper = value
     end)
+
+
+    FruitList = {
+        "Rocket-Rocket",
+        "Spike-Spike",
+        "Chop-Chop",
+        "Spring-Spring",
+        "Kilo-Kilo",
+        "Spin-Spin",
+        "Falcon-Falcon",
+        "Smoke-Smoke",
+        "Flame-Flame",
+        "Ice-Ice",
+        "Sand-Sand",
+        "Dark-Dark",
+        "Ghost-Ghost",
+        "Diamond-Diamond",
+        "Light-Light",
+        "Love-Love",
+        "Rubber-Rubber",
+        "Barrier-Barrier",
+        "Magma-Magma",
+        "Quake-Quake",
+        "Human-Human: Buddha",
+        "Spring-Spring",
+        "Phoenix-Phoenix",
+        "Rumble-Rumble",
+        "Pain-Pain",
+        "Gravity-Gravity",
+        "Dough-Dough",
+        "Shadow-Shadow",
+        "Venom-Venom",
+        "Control-Control",
+        "Dragon-Dragon",
+        "Leopard-Leopard",
+        "Kitsune-Kitsune",
+        "Spirit-Spirit",
+        "Mammoth-Mammoth",
+        "T-Rex-T-Rex",
+        "Sound-Sound"
+    }
+
+    local Remote_GetFruits = game.ReplicatedStorage:FindFirstChild("Remotes").CommF_:InvokeServer("GetFruits", true)
+    Table_DevilFruitSniper = {}
+    ShopDevilSell = {}
+    for i,v in next,Remote_GetFruits do
+        table.insert(Table_DevilFruitSniper,v.Name)
+        if v.OnSale then 
+            table.insert(ShopDevilSell,v.Name)
+        end
+    end
     
-        D:AddButton("Check Stock Advanced Dealer",function()
+    _G.SelectFruit = ""
+    D:AddDropdown("Select Fruit Dealer Mirage",Table_DevilFruitSniper,function(value)
+        _G.SelectFruit = value
+    end)
+    
+    D:AddToggle("Auto Buy Fruit Dealer Mirage",_G.AutoBuyFruitSniper,function(value)
+        _G.AutoBuyFruitSniper = value
+    end)
+
+    game:GetService("RunService").Stepped:Connect(function()
+        if _G.AutoBuyFruitSniper and _G.SelectFruit ~= "" then
+            for _,fruitName in pairs(ShopDevilSell) do
+                if fruitName == _G.SelectFruit then
+                    local success, result = pcall(function()
+                        return game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("BuyFruit", _G.SelectFruit)
+                    end)
+                    
+                    if success and result then
+                        _G.AutoBuyFruitSniper = false -- Matikan auto-buy jika pembelian berhasil
+                    end
+                    break -- Hentikan pengecekan setelah mencoba membeli
+                end
+            end
+        end
+    end)
+    
+    
+        D:AddButton("Check Stock Mirage Dealer",function()
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Remotes = ReplicatedStorage.Remotes
 local Event = Remotes["CommF_"]
@@ -14335,7 +15614,7 @@ closeButton.Position = UDim2.new(1, -20, 0, 0)
 closeButton.BackgroundColor3 = Color3.new(1, 0, 0)
 closeButton.Text = "X"
 closeButton.MouseButton1Click:Connect(closeGUI)
-    end)
+end)
     
     D:AddSeperator("Others")
     
@@ -14430,12 +15709,12 @@ closeButton.MouseButton1Click:Connect(closeGUI)
         game:GetService("Players").LocalPlayer.PlayerGui.Main.FruitShop.Visible = true
     end)
 
-    D:AddToggle("Fruit Notification",true ,_G.FruitCheck,function(value)
+    D:AddToggle("Fruit Notification",_G.FruitCheck,function(value)
         _G.FruitCheck = value
         end)
         
         spawn(function()
-                while wait(.1) do
+                while wait() do
                     if _G.FruitCheck then
                         for i,v in pairs(game.Workspace:GetChildren()) do
                             if string.find(v.Name, "Fruit") then
@@ -14554,75 +15833,28 @@ end)
         end
     end)
 
-
-    Misc:AddSeperator("Join Webhook")
+    Misc:AddSeperator("Buso Haki State")
     
-    Misc:AddButton("Rejoin Server",function()
-        game:GetService("TeleportService"):Teleport(game.PlaceId, game:GetService("Players").LocalPlayer)
+    Misc:AddDropdown("Select Haki State",{"State 0","State 1","State 2","State 3","State 4","State 5"},function(value)
+        _G.SelectStateHaki = value
     end)
     
-    Misc:AddButton("Server Hop",function()
-        Hop()
-    end)
---[[ --blok off fitur
-    Misc:AddButton("Hop To Lower Player",function()
-        getgenv().AutoTeleport = true
-        getgenv().DontTeleportTheSameNumber = true 
-        getgenv().CopytoClipboard = false
-        if not game:IsLoaded() then
-            print("Game is loading waiting...")
-        end
-        local maxplayers = math.huge
-        local serversmaxplayer;
-        local goodserver;
-        local gamelink = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100" 
-        function serversearch()
-            for _, v in pairs(game:GetService("HttpService"):JSONDecode(game:HttpGetAsync(gamelink)).data) do
-                if type(v) == "table" and v.playing ~= nil and maxplayers > v.playing then
-                    serversmaxplayer = v.maxPlayers
-                    maxplayers = v.playing
-                    goodserver = v.id
-                end
-            end       
-        end
-        function getservers()
-            serversearch()
-            for i,v in pairs(game:GetService("HttpService"):JSONDecode(game:HttpGetAsync(gamelink))) do
-                if i == "nextPageCursor" then
-                    if gamelink:find("&cursor=") then
-                        local a = gamelink:find("&cursor=")
-                        local b = gamelink:sub(a)
-                        gamelink = gamelink:gsub(b, "")
-                    end
-                    gamelink = gamelink .. "&cursor=" ..v
-                    getservers()
-                end
-            end
-        end 
-        getservers()
-        if AutoTeleport then
-            if DontTeleportTheSameNumber then 
-                if #game:GetService("Players"):GetPlayers() - 4  == maxplayers then
-                    return warn("It has same number of players (except you)")
-                elseif goodserver == game.JobId then
-                    return warn("Your current server is the most empty server atm") 
-                end
-            end
-            game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, goodserver)
+    Misc:AddButton("Change Buso Haki State",function()
+        if _G.SelectStateHaki == "State 0" then
+            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("ChangeBusoStage",0)
+        elseif _G.SelectStateHaki == "State 1" then
+            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("ChangeBusoStage",1)
+        elseif _G.SelectStateHaki == "State 2" then
+            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("ChangeBusoStage",2)
+        elseif _G.SelectStateHaki == "State 3" then
+            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("ChangeBusoStage",3)
+        elseif _G.SelectStateHaki == "State 4" then
+            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("ChangeBusoStage",4)
+        elseif _G.SelectStateHaki == "State 5" then
+            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("ChangeBusoStage",5)
         end
     end)
 
-    Misc:AddButton("Copy Job Id",function()
-	setclipboard(tostring(game.JobId))
-	end)
-]] --blok off fitur
-    Misc:AddTextbox("Paste Webhook Job Id", true, function(value)
-	_G.Job = value
-	end)
-
-	Misc:AddButton("Join Webhook Job Id",function()
-	game:GetService("TeleportService"):TeleportToPlaceInstance(game.placeId,_G.Job, game.Players.LocalPlayer)
-	end)
 	
     Misc:AddSeperator("Misc")
     
@@ -14663,669 +15895,16 @@ Misc:AddSeperator("Teams")
     Misc:AddButton("Join Marines Team",function()
         game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("SetTeam","Marines") 
     end)
+
+    Misc:AddSeperator("Mod Hack By Medusa")
+    Misc:AddLabel("Turn On Inf Ability")
     
-    Misc:AddSeperator("Highlight")
-
-Misc:AddToggle("Show Chat disabled", _G.chat, function(value)
-    _G.chat = value
-    if _G.chat == true then
-local StarterGui = game:GetService('StarterGui')
-StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, false)    
-elseif _G.chat == false then
-local StarterGui = game:GetService('StarterGui')
-StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, true)    
-end
-  end)
-
-  Misc:AddToggle("Show leaderboard disabled", _G.leaderboard, function(a)
-    _G.leaderboard = a
-    if _G.leaderboard == true then
-local StarterGui = game:GetService('StarterGui')
-game:GetService('StarterGui'):SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)   
-elseif _G.leaderboard == false then
-local StarterGui = game:GetService('StarterGui')
-game:GetService('StarterGui'):SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, true)   
-end
-  end)
-
-    Misc:AddToggle("Highlight Mode",false,function(value)
-        if value == true then
-            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.Beli.Visible = false
-            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.HP.Visible = false
-            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.Energy.Visible = false
-            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.StatsButton.Visible = false
-            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.ShopButton.Visible = false
-            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.Skills.Visible = false
-            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.Level.Visible = false
-            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.MenuButton.Visible = false
-            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.Code.Visible = false
-            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.Settings.Visible = false
-            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.Mute.Visible = false
-            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.CrewButton.Visible = false
-        else
-            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.Beli.Visible = true
-            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.HP.Visible = true
-            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.Energy.Visible = true
-            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.StatsButton.Visible = true
-            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.ShopButton.Visible = true
-            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.Skills.Visible = true
-            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.Level.Visible = true
-            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.MenuButton.Visible = true
-            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.Code.Visible = true
-            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.Settings.Visible = true
-            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.Mute.Visible = true
-            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.CrewButton.Visible = true
-        end
-    end)
-
-Misc:AddToggle("Graphic",false,function(v)
-			if v then
-				getgenv().mode = "Autumn" -- Choose from Summer and Autumn
-				local a = game.Lighting
-				a.Ambient = Color3.fromRGB(33, 33, 33)
-				a.Brightness = 0.3
-				a.ColorShift_Bottom = Color3.fromRGB(0, 0, 0)
-				a.ColorShift_Top = Color3.fromRGB(255, 247, 237)
-				a.EnvironmentDiffuseScale = 0.105
-				a.EnvironmentSpecularScale = 0.522
-				a.GlobalShadows = true
-				a.OutdoorAmbient = Color3.fromRGB(51, 54, 67)
-				a.ShadowSoftness = 0.04
-				a.GeographicLatitude = -15.525
-				a.ExposureCompensation = 0.75
-				local b = Instance.new("BloomEffect", a)
-				b.Name = "BloomEffect_Graphic"
-				b.Enabled = true
-				b.Intensity = 0.04
-				b.Size = 1900
-				b.Threshold = 0.915
-				local c = Instance.new("ColorCorrectionEffect", a)
-				c.Name = 'ColorCorrectionEffect1_Graphic'
-				c.Brightness = 0.176
-				c.Contrast = 0.39
-				c.Enabled = true
-				c.Saturation = 0.2
-				c.TintColor = Color3.fromRGB(217, 145, 57)
-				if getgenv().mode == "Summer" then
-					c.TintColor = Color3.fromRGB(255, 220, 148)
-				elseif getgenv().mode == "Autumn" then
-					c.TintColor = Color3.fromRGB(242, 193, 79)
-				end
-				local d = Instance.new("DepthOfFieldEffect", Graphic)
-				d.Name =  'DepthOfFieldEffect_Graphic'
-				d.Enabled = true
-				d.FarIntensity = 0.077
-				d.FocusDistance = 21.54
-				d.InFocusRadius = 20.77
-				d.NearIntensity = 0.277
-				local e = Instance.new("ColorCorrectionEffect", a)
-				e.Name = 'ColorCorrectionEffect2_Graphic'
-				e.Brightness = 0
-				e.Contrast = -0.07
-				e.Saturation = 0
-				e.Enabled = true
-				e.TintColor = Color3.fromRGB(255, 247, 239)
-				local e2 = Instance.new("ColorCorrectionEffect", a)
-				e2.Name = 'ColorCorrectionEffect3_Graphic'
-				e2.Brightness = 0.2
-				e2.Contrast = 0.45
-				e2.Saturation = -0.1
-				e2.Enabled = true
-				e2.TintColor = Color3.fromRGB(255, 255, 255)
-				local s = Instance.new("SunRaysEffect", a)
-				s.Name = 'SunRaysEffect_Graphic'
-				s.Enabled = false
-				s.Intensity = 0.01
-				s.Spread = 0.146
-			else
-				local a = game.Lighting
-				a.Ambient = Color3.fromRGB(170, 170, 170)
-				a.Brightness = 2
-				a.ColorShift_Bottom = Color3.fromRGB(0, 0, 0)
-				a.ColorShift_Top = Color3.fromRGB(0, 0, 0)
-				a.EnvironmentDiffuseScale = 0.105
-				a.EnvironmentSpecularScale = 0.522
-				a.GlobalShadows = false
-				a.OutdoorAmbient = Color3.fromRGB(127, 127, 127)
-				a.ShadowSoftness = 0
-				a.GeographicLatitude = 66
-				a.ExposureCompensation = 0.2
-				game:GetService("Lighting")["BloomEffect_Graphic"]:Destroy()
-				game:GetService("Lighting")["ColorCorrectionEffect1_Graphic"]:Destroy()
-				game:GetService("Lighting")["ColorCorrectionEffect2_Graphic"]:Destroy()
-				game:GetService("Lighting")["ColorCorrectionEffect3_Graphic"]:Destroy()
-				game:GetService("Lighting")["SunRaysEffect_Graphic"]:Destroy()
-			end
-		end)
-
-	---- [RainbowHaki]
-	spawn(function()
-		while wait() do
-			if RainbowHaki then
-				pcall(function()
-					if game.Players.LocalPlayer.Character.HasBuso then
-						for i,v in pairs(game.Players.LocalPlayer.Character.Humanoid:GetChildren()) do
-							if v.Name == "RightLowerArm_BusoLayer1" or v.Name == "RightLowerArm_BusoLayer2" or v.Name == "RightHand_BusoLayer1" or v.Name == "RightHand_BusoLayer2" or v.Name == "LeftLowerArm_BusoLayer1" or v.Name == "LeftLowerArm_BusoLayer2" or v.Name == "LeftHand_BusoLayer1" or v.Name == "LeftHand_BusoLayer2" or v.Name == "LeftHand_BusoLayer1" or v.Name == "RightUpperArm_BusoLayer1" or v.Name == "RightUpperArm_BusoLayer2" or v.Name == "LeftUpperArm_BusoLayer1" or v.Name == "LeftUpperArm_BusoLayer2" or v.Name == "UpperTorso_BusoLayer1" or v.Name == "UpperTorso_BusoLayer2" or v.Name == "LowerTorso_BusoLayer1" or v.Name == "LowerTorso_BusoLayer2" or v.Name == "Head_BusoLayer1" or v.Name == "Head_BusoLayer2" or v.Name == "RightUpperLeg_BusoLayer1" or v.Name == "RightUpperLeg_BusoLayer2" or v.Name == "LeftUpperLeg_BusoLayer1" or v.Name == "LeftUpperLeg_BusoLayer2" or v.Name == "RightLowerLeg_BusoLayer1" or v.Name == "RightLowerLeg_BusoLayer2" or v.Name == "LeftLowerLeg_BusoLayer1" or v.Name == "LeftLowerLeg_BusoLayer2" or v.Name == "LeftFoot_BusoLayer1" or v.Name == "LeftFoot_BusoLayer2" or v.Name == "RightFoot_BusoLayer1" or v.Name == "RightFoot_BusoLayer2" then
-								v.Color = Color3.fromHSV(tick() * 24 % 255/255, 1, 1)
-							end
-						end
-					end
-				end)
-			end
-		end
-	end)
-
-	Misc:AddToggle("Rainbow Haki",false,function(value)
-		RainbowHaki = value
-	end)
-
-	Misc:AddToggle("Rainbow Yoru",false,function(value)
-		RainbowYoru = value
-	end)
-
-	---- [RainbowYoru]
-
-	spawn(function()
-		while wait() do
-			if RainbowYoru then
-				pcall(function()
-					for i,v in pairs(game.Players.LocalPlayer.Character.DarkBlade.Right:GetChildren()) do
-						if v.Name == "Runes" or v.Name == "Hold" or v.Name == "Bottom" or v.Name == "Gems" or v.Name == "Wings" or v.Name == "Blade" or v.Name == "Tape" then
-							v.Color = Color3.fromHSV(tick() * 24 % 255/255, 1, 1)
-							v.Material = "Neon"
-						end
-
-					end
-				end)
-			end
-		end
-	end)
-
-	spawn(function()
-		while wait(1) do
-			if RainbowYoru then
-				pcall(function()
-					for i,v in pairs(game.Players.LocalPlayer.Character.DarkBlade.Right.Handle:GetChildren()) do
-						if v.Name == "Trail" then
-							v.LightEmission = 1
-						end
-
-					end
-				end)
-			end
-		end
-	end)
-
-	spawn(function()
-		while wait(1) do
-			if RainbowYoru then
-				pcall(function()
-					for i,v in pairs(game.Players.LocalPlayer.Character.DarkBlade.Right.Handle.Attachment0:GetChildren()) do
-						if v.Name == "Beam" then
-							v.LightEmission = 1 v.Texture = 0 v.Width0 = 0 v.Width1 = 0
-						end
-
-					end
-				end)
-			end
-		end
-	end)
-
-    Misc:AddSeperator("Misc 2")
-
-Misc:AddToggle("Anti AFK", true, function()
-local vu = game:GetService("VirtualUser")
-repeat wait() until game:IsLoaded() 
-	game:GetService("Players").LocalPlayer.Idled:connect(function()
-    game:GetService("VirtualUser"):ClickButton2(Vector2.new())
-		vu:Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
-		wait(1)
-		vu:Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
-   end)
-end)
-
-	Misc:AddToggle("Auto Rejoin",true,function(value)
-		_G.AutoRejoin = value
-	end)
-
-	spawn(function()
-	    while wait() do
-	        if _G.AutoRejoin then
-	                getgenv().rejoin = game:GetService("CoreGui").RobloxPromptGui.promptOverlay.ChildAdded:Connect(function(child)
-                        if child.Name == 'ErrorPrompt' and child:FindFirstChild('MessageArea') and child.MessageArea:FindFirstChild("ErrorFrame") then
-                            game:GetService("TeleportService"):Teleport(game.PlaceId)
-                        end
-                     end)
-	            end
-	        end
-	    end)
-	
-	Misc:AddTextbox("Lock Money", "Please Type", true, function(value)
-	_G.LockBeli = value
-	end)
-	
-	Misc:AddTextbox("Lock Factment", "Please Type", true, function(value)
-	_G.LockFragments = value
-	end)
-
-    Mh:AddSeperator("Auto Hop Server")
-    Mh:AddLabel("Click And Wait 5 Second")
-
-    Mh:AddToggle("God's Chalice & FOD Notify", false, _G.NotifItemChestcheck, function(value)
-        _G.NotifItemChestcheck = value
-    end)
-    
-    spawn(function()
-        while wait(1) do 
-            if _G.NotifItemChestcheck then
-                -- Deteksi item di Character LocalPlayer
-                local godsChaliceInCharacter = game:GetService("Players").LocalPlayer.Character:FindFirstChild("God's Chalice")
-                local fishOfDarknessInCharacter = game:GetService("Players").LocalPlayer.Character:FindFirstChild("Fish of Darkness")
-    
-                -- Deteksi item di chest
-                local chest = game:GetService("Workspace"):FindFirstChild("Chest")
-                local godsChaliceInChest = nil
-                local fishOfDarknessInChest = nil
-        
-                if chest then
-                    godsChaliceInChest = chest:FindFirstChild("God's Chalice")
-                    fishOfDarknessInChest = chest:FindFirstChild("Fish of Darkness")
-                end
-    
-                -- Deteksi item di Character pemain lain
-                local godsChaliceFound = false
-                local fishOfDarknessFound = false
-                for _, player in pairs(game:GetService("Players"):GetPlayers()) do
-                    if player.Character:FindFirstChild("God's Chalice") then
-                        godsChaliceFound = true
-                    end
-                    if player.Character:FindFirstChild("Fish of Darkness") then
-                        fishOfDarknessFound = true
-                    end
-                end
-    
-                -- Notifikasi jika God's Chalice ditemukan
-                if godsChaliceInCharacter or godsChaliceInChest or godsChaliceFound then
-                    require(game:GetService("ReplicatedStorage").Notification).new("God's Chalice detected in the server!"):Display()
-                    wait(1)
-                end
-    
-                -- Notifikasi jika Fish of Darkness ditemukan
-                if fishOfDarknessInCharacter or fishOfDarknessInChest or fishOfDarknessFound then
-                    require(game:GetService("ReplicatedStorage").Notification).new("Fish of Darkness detected in the server!"):Display()
-                    wait(1)
-                end
-            end
-        end
-    end)
-    
-    
-    Mh:AddToggle("Mirage Island Notify",false ,_G.NotifMirragecheck,function(value)
-        _G.NotifMirragecheck = value
-        end)
-        
-        spawn(function()
-                while wait(.1) do
-                    if _G.NotifMirragecheck then
-                        for i,v in pairs(game.Workspace._WorldOrigin.Locations:FindFirstChild('Mirage Island')) do
-                            if string.find(v.Name, "Mirage Island") then
-                                require(game:GetService("ReplicatedStorage").Notification).new("Mirage Island Spawn"):Display();
-                                wait()
-                                setthreadcontext(5)
-                            end
-                        end
-                    end
-                  end
-                 end)
-
-    Mh:AddToggle("Elite Hunter Notification",false ,_G.EliteCheck,function(value)
-_G.EliteCheck = value
-end)
-        
-spawn(function()
-while wait(.1) do
-if _G.EliteCheck then
-for i,v in pairs(game:GetService("ReplicatedStorage"):FindFirstChild("Diablo") or game:GetService("ReplicatedStorage"):FindFirstChild("Deandre") or game:GetService("ReplicatedStorage"):FindFirstChild("Urban") or game:GetService("Workspace").Enemies:FindFirstChild("Diablo") or game:GetService("Workspace").Enemies:FindFirstChild("Deandre") or game:GetService("Workspace").Enemies:FindFirstChild("Urban")) do
-if string.find(v.Name, "Diablo", "Deandre", "Urban") then
-require(game:GetService("ReplicatedStorage").Notification).new("Notification Elite Hunter Spawn"):Display();
-wait()
-setthreadcontext(5)
-end
-end
-end
-end
-end)
-
-    Mh:AddToggle("Auto Hop Server Mirage Island",_G.Hopfinddao,function(value)
-        _G.Hopfinddao = value
-       end)
-        spawn(function()
-            while wait() do
-            if _G.Hopfinddao then
-                if game:GetService("Workspace").Map:FindFirstChild("MysticIsland") or game:GetService("Workspace").Map:FindFirstChild("MysticIsland") then
-                    if HighestPointRealCFrame and (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - HighestPointRealCFrame.Position).Magnitude > 10 then
-                    topos(getHighestPoint().CFrame * CFrame.new(0, 211.88, 0))
-                        end
-                elseif not game:GetService("Workspace").Map:FindFirstChild("MysticIsland") or not game:GetService("Workspace").Map:FindFirstChild("MysticIsland") then
-                    Hop()
-                    end
-                end
-            end
-        end)
-        Mh:AddToggle("Auto Hop Server Full Moon",_G.AutoFindFullmoon,function(value)
-            _G.AutoFindFullmoon = value    
-            end)
-            
-            spawn(function()
-                 while wait() do
-                     if _G.AutoFindFullmoon then
-                     if game:GetService("Lighting").Sky.MoonTextureId=="http://www.roblox.com/asset/?id=9709149052" or game:GetService("Lighting").Sky.MoonTextureId=="http://www.roblox.com/asset/?id=9709149431" then
-                         wait(2.0)
-                         game.StarterGui:SetCore("SendNotification", {
-                             Title = "BRUTALITY HUB", 
-                             Text = "You Server Full Moon" ,
-                             Icon = "http://www.roblox.com/asset/?id=107679910024355",
-                             Duration = 2.5
-                         })
-                     elseif game:GetService("Lighting").Sky.MoonTextureId=="http://www.roblox.com/asset/?id=9709143733" then
-                         Hop()
-                         game.StarterGui:SetCore("SendNotification", {
-                             Title = "BRUTALITY HUB", 
-                             Text = "Wait New Server" ,
-                             Icon = "http://www.roblox.com/asset/?id=107679910024355",
-                             Duration = 2.5
-                         })
-                     elseif game:GetService("Lighting").Sky.MoonTextureId=="http://www.roblox.com/asset/?id=9709150401" then
-                         Hop()
-                         game.StarterGui:SetCore("SendNotification", {
-                             Title = "BRUTALITY HUB", 
-                             Text = "Wait New Server" ,
-                             Icon = "http://www.roblox.com/asset/?id=107679910024355",
-                             Duration = 2.5
-                         })
-                     elseif game:GetService("Lighting").Sky.MoonTextureId=="http://www.roblox.com/asset/?id=9709149680" then
-                         Hop()
-                         game.StarterGui:SetCore("SendNotification", {
-                             Title = "BRUTALITY HUB", 
-                             Text = "Wait New Server" ,
-                             Icon = "http://www.roblox.com/asset/?id=107679910024355",
-                             Duration = 2.5
-                         })
-                     else
-                         Hop()
-                         end
-                     end
-                 end
-             end)
-    Mh:AddToggle("Farm Dough King Hop", _G.AutodoughkingHop,function(value)
-        _G.AutodoughkingHop = value
-    end)
-    spawn(function()
-        while wait() do
-         if  _G.Autodoughking and World3 then
-                pcall(function()
-                    if game:GetService("Workspace").Enemies:FindFirstChild("Dough King") then
-                               for i,v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
-                                   if v.Name == "Dough King" then
-                                       if v:FindFirstChild("Humanoid") and v:FindFirstChild("HumanoidRootPart") and v.Humanoid.Health > 0 then
-                                           repeat task.wait()
-                                               AutoHaki()
-                                               EquipWeapon(_G.SelectWeapon)
-                                               v.HumanoidRootPart.CanCollide = false
-                                               v.Humanoid.WalkSpeed = 2
-                                               v.HumanoidRootPart.Size = Vector3.new(50,50,50)
-                                               HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
-                                               game:GetService("VirtualUser"):CaptureController()
-                                               game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
-                                               sethiddenproperty(game.Players.LocalPlayer,"SimulationRadius",math.huge)
-                                           until not  _G.Autodoughking or not v.Parent or v.Humanoid.Health <= 0
-                                       end
-                                   end
-                               end
-                           else
-                           HyperCahaya(CFrame.new(-2662.818603515625, 1062.3480224609375, -11853.6953125))
-                               if game:GetService("ReplicatedStorage"):FindFirstChild("Dough King") then
-                                   HyperCahaya(game:GetService("ReplicatedStorage"):FindFirstChild("Dough King").HumanoidRootPart.CFrame * CFrame.new(2,20,2))
-                               else
-                                   if  _G.AutodoughkingHop then
-                                       Hop()
-                                   end
-                               end
-                           end
-                       end)
-                   end
-               end
-           end)
-    Mh:AddToggle("Buy Legendary Sword Hop",_G.AutoBuyLegendarySword_Hop,function(value)
-        _G.AutoBuyLegendarySword_Hop = value
-    end)
-
-    Mh:AddToggle("Buy Enchancement Hop Server",_G.AutoBuyEnchancementColour_H0p,function(value)
-        _G.AutoBuyEnchancementColour_H0p = value
-    end)
-    
-    spawn(function()
-        while wait() do
-            if _G.AutoBuyEnchancementColour then
-                local args = {
-                    [1] = "ColorsDealer",
-                    [2] = "2"
-                }
-                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(args))
-                if _G.AutoBuyEnchancementColour_H0p and _G.AutoBuyEnchancementColour and not World1 then
-                    wait(10)
-                    Hop()
-                end
-            end 
-        end
-    end)
-    
-    Mh:AddSeperator("Graphic")
-
-    
-    Mh:AddButton("FPS Boost",function()
-        pcall(function()
-            game:GetService("Lighting").FantasySky:Destroy()
-            local g = game
-            local w = g.Workspace
-            local l = g.Lighting
-            local t = w.Terrain
-            t.WaterWaveSize = 0
-            t.WaterWaveSpeed = 0
-            t.WaterReflectance = 0
-            t.WaterTransparency = 0
-            l.GlobalShadows = false
-            l.FogEnd = 9e9
-            l.Brightness = 0
-            settings().Rendering.QualityLevel = "Level01"
-            for i, v in pairs(g:GetDescendants()) do
-                if v:IsA("Part") or v:IsA("Union") or v:IsA("CornerWedgePart") or v:IsA("TrussPart") then 
-                    v.Material = "Plastic"
-                    v.Reflectance = 0
-                elseif v:IsA("Decal") or v:IsA("Texture") then
-                    v.Transparency = 1
-                elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
-                    v.Lifetime = NumberRange.new(0)
-                elseif v:IsA("Explosion") then
-                    v.BlastPressure = 1
-                    v.BlastRadius = 1
-                elseif v:IsA("Fire") or v:IsA("SpotLight") or v:IsA("Smoke") or v:IsA("Sparkles") then
-                    v.Enabled = false
-                elseif v:IsA("MeshPart") then
-                    v.Material = "Plastic"
-                    v.Reflectance = 0
-                    v.TextureID = 10385902758728957
-                end
-            end
-            for i, e in pairs(l:GetChildren()) do
-                if e:IsA("BlurEffect") or e:IsA("SunRaysEffect") or e:IsA("ColorCorrectionEffect") or e:IsA("BloomEffect") or e:IsA("DepthOfFieldEffect") then
-                    e.Enabled = false
-                end
-            end
-            for i, v in pairs(game:GetService("Workspace").Camera:GetDescendants()) do
-                if v.Name == ("Water;") then
-                    v.Transparency = 1
-                    v.Material = "Plastic"
-                end
-            end
-        end)
-    end)
-    
-    Mh:AddButton("Remove Fog",function(qww)
-	game:GetService("Lighting").LightingLayers:Destroy()
-	game:GetService("Lighting").Sky:Destroy()
-end)
-    
-    Mh:AddButton("Always Day",function()
-    game:GetService("RunService").Heartbeat:wait() do
-        game:GetService("Lighting").ClockTime = 12
-    end
-    end)
-    
-    Mh:AddToggle("Remove Damage",function()
-		for i,v in pairs(game.Workspace:GetDescendants()) do
-			if v.Name == "DamageCounter" then   
-				v:Destroy()
-			end
-		end
-		for i,v in pairs(game.ReplicatedStorage:GetDescendants()) do
-			if v.Name == "DamageCounter" then   
-				v:Destroy()
-			end
-		end
-	end)
-    
-    Mh:AddButton("Unlock FPS",function()
-        setfpscap(9999999)
-    end)
-    
-    Mh:AddButton("Reduce Cpu", function()
-	for i,v in pairs(game.Workspace.Map:GetDescendants()) do
-		if v.Name == "Tavern" or v.Name == "SmileFactory" or v.Name == "Tree" or v.Name == "Rocks" or v.Name == "PartHouse" or v.Name == "Hotel" or v.Name == "WallPiece" or v.Name == "MiddlePillars" or v.Name == "Cloud" or v.Name == "PluginGrass" or v.Name == "BigHouse" or v.Name == "SmallHouse" or v.Name == "Detail" then
-			v:Destroy()
-		end
-	end 
-	for i,v in pairs(game.ReplicatedStorage.Unloaded:GetDescendants()) do
-		if v.Name == "Tavern" or v.Name == "SmileFactory" or v.Name == "Tree" or v.Name == "Rocks" or v.Name == "PartHouse" or v.Name == "Hotel" or v.Name == "WallPiece" or v.Name == "MiddlePillars" or v.Name == "Cloud" or v.Name == "PluginGrass" or v.Name == "BigHouse" or v.Name == "SmallHouse" or v.Name == "Detail" then
-			v:Destroy()
-		end
-	end
-	for i,v in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
-		if v:IsA("Accessory") or v.Name == "Pants" or v.Name == "Shirt" then
-			v:Destroy()
-		end
-	end
-	local decalsyeeted = true -- Leaving this on makes games look shitty but the fps goes up by at least 20.
-	local g = game
-	local w = g.Workspace
-	local l = g.Lighting
-	local t = w.Terrain
-	t.WaterWaveSize = 0
-	t.WaterWaveSpeed = 2
-	t.WaterReflectance = 0
-	t.WaterTransparency = 0
-	l.GlobalShadows = false
-	l.FogEnd = 9e9
-	l.Brightness = 0
-	settings().Rendering.QualityLevel = "Level01"
-	for i, v in pairs(g:GetDescendants()) do
-		if v:IsA("Part") or v:IsA("Union") or v:IsA("CornerWedgePart") or v:IsA("TrussPart") then
-			v.Material = "Plastic"
-			v.Reflectance = 0
-		elseif v:IsA("Decal") or v:IsA("Texture") and decalsyeeted then
-			v.Transparency = 1
-		elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
-			v.Lifetime = NumberRange.new(0)
-		elseif v:IsA("Explosion") then
-			v.BlastPressure = 1
-			v.BlastRadius = 1
-		elseif v:IsA("Fire") or v:IsA("SpotLight") or v:IsA("Smoke") or v:IsA("Sparkles") then
-			v.Enabled = false
-		elseif v:IsA("MeshPart") then
-			v.Material = "Plastic"
-			v.Reflectance = 0
-			v.TextureID = 10385902758728957
-		end
-	end
-	for i, e in pairs(l:GetChildren()) do
-		if e:IsA("BlurEffect") or e:IsA("SunRaysEffect") or e:IsA("ColorCorrectionEffect") or e:IsA("BloomEffect") or e:IsA("DepthOfFieldEffect") then
-			e.Enabled = false
-		end
-	end
-    end)
-
-
-    --Mh:AddSeperator("Play Music Song")
-    --[[
-    local MusicId = nil
-    local MusicToggle = false
-    local currentSound = nil
-    local pausedPosition = 0
-    
-    local function playMusic()
-        if MusicToggle and MusicId then
-            if currentSound then
-                currentSound:Stop()
-                currentSound:Destroy()
-            end
-            currentSound = Instance.new("Sound", game.Workspace)
-            currentSound.SoundId = "rbxassetid://" .. MusicId
-            currentSound.TimePosition = pausedPosition
-            currentSound.Looped = true
-            currentSound:Play()
-            currentSound.Ended:Connect(function()
-                currentSound.TimePosition = 0
-                currentSound:Play()
-            end)
-        end
-    end
-
-    Mh:AddTextbox("Paste Id Music", true,function(value)
-        MusicId = value
-        playMusic()
-        end)
-    Mh:AddToggle("Play Music",true, MusicToggle, function(state)
-    MusicToggle = state
-        if MusicToggle then
-            playMusic()
-        else
-            if currentSound then
-                pausedPosition = currentSound.TimePosition
-                currentSound:Stop()
-            end
-        end
-    --end
-end)
-
-    Mh:AddButton("Repeat Music",function()
-        if MusicToggle and currentSound then
-            currentSound.TimePosition = 0
-            currentSound:Play()
-        end
-    --end
-end)
-
-Mh:AddButton("Phonk Music",function()
-        MusicId = "14145624031"
-        playMusic()
-    --end
-end)
-
-Mh:AddButton("Copy Id Music",function()
-    setclipboard("14145624031")
-    --end
-end)
-]]
-
-Mh:AddSeperator("Mod Hack By Medusa")
-Mh:AddLabel("Turn On Inf Ability")
-    
-    Mh:AddToggle("Dodge No Cooldown",false,function(value)
+Misc:AddToggle("Dodge No Cooldown",false,function(value)
         nododgecool = value
         NoDodgeCool()
     end)
     
-    Mh:AddToggle("Auto Active Race",_G.AutoAgility,function(value)
+    Misc:AddToggle("Auto Active Race",_G.AutoAgility,function(value)
         _G.AutoAgility = value
     end)
     
@@ -15339,7 +15918,7 @@ Mh:AddLabel("Turn On Inf Ability")
         end)
     end)
     
-    Mh:AddToggle("Infinite Soru",getgenv().InfSoru,function(value)
+    Misc:AddToggle("Infinite Soru",getgenv().InfSoru,function(value)
         getgenv().InfSoru = value
     end)
     
@@ -15365,7 +15944,7 @@ Mh:AddLabel("Turn On Inf Ability")
         end
     end)
 
-    Mh:AddToggle("Infinite Energy",_G.InfinitsEnergy,function(value)
+    Misc:AddToggle("Infinite Energy",_G.InfinitsEnergy,function(value)
         _G.InfinitsEnergy = value
 INGENG()
 end)
@@ -15380,7 +15959,7 @@ function INGENG()
     end)
 end
 
-Mh:AddToggle("Infinite Ability",InfiniteAbility,function(value)
+Misc:AddToggle("Infinite Ability",InfiniteAbility,function(value)
     InfiniteAbility = value
 end)
     
@@ -15430,7 +16009,7 @@ function InfAb()
     end
 end
 
-    Mh:AddToggle("Walk on Water",true,function(value)
+Misc:AddToggle("Walk on Water",true,function(value)
         _G.WalkWater = value
     end)
     
@@ -15446,7 +16025,7 @@ end
 			end
 		end)
     
-    Mh:AddToggle("No Clip And Fly",_G.NOCLIP,function(value)
+Misc:AddToggle("No Clip And Fly",_G.NOCLIP,function(value)
         _G.NOCLIP = value
     end)
 	
@@ -15463,7 +16042,7 @@ end
     end)
 
     
-    Mh:AddButton("Remove Lave",function()
+    Misc:AddButton("Remove Lave",function()
 		for i,v in pairs(game.Workspace:GetDescendants()) do
 			if v.Name == "Lava" then   
 				v:Destroy()
@@ -15476,21 +16055,21 @@ end
 		end
 	end)
 
-_G.Remove_Effect = true
-
-spawn(function()
-    game:GetService('RunService').Stepped:Connect(function()
-        if _G.Remove_Effect then
-            for i, v in pairs(game:GetService("ReplicatedStorage").Effect.Container:GetChildren()) do
-                if v.Name == "Death" then
-                    v:Destroy() 
+    _G.Remove_Effect = true --memek3
+    spawn(function()
+        game:GetService('RunService').Stepped:Connect(function()
+            if _G.Remove_Effect then
+                for i, v in pairs(game:GetService("ReplicatedStorage").Effect.Container:GetChildren()) do
+                    if v.Name == "Death" then
+                        v:Destroy() 
+                    end
                 end
             end
-        end
+        end)
     end)
-    end)
-    Mh:AddSeperator("Hack")
-    Mh:AddButton("Unlock Buso",function()
+
+    Misc:AddSeperator("Hack")
+    Misc:AddButton("Unlock Buso",function()
     
     -- Ability [
 --     Buso,Soru,Geppo,KenUpgrade
@@ -15508,7 +16087,7 @@ elseif type(Ability) == 'table' then
    end
    end)
    
-   Mh:AddButton("Unlock Soru",function()
+   Misc:AddButton("Unlock Soru",function()
    -- Ability [
 --     Buso,Soru,Geppo-- ]
 --Example
@@ -15524,7 +16103,7 @@ elseif type(Ability) == 'table' then
    end
    end)
    
-   Mh:AddButton("Unlock Geppo",function()
+   Misc:AddButton("Unlock Geppo",function()
 -- Ability [
 --     Buso,Soru,Geppo-- ]
 --Example
@@ -15540,14 +16119,14 @@ elseif type(Ability) == 'table' then
    end
    end)
 
-    Mh:AddButton("Unlock Portal",function()
-        _G.UnlockPortal = true
+   Misc:AddButton("Unlock Portal",function(value)
+        _G.UnlockPortal = value --memek4
     end)
     
     spawn(function()
         while wait() do
             pcall(function()
-                if _G.UnlockPortal == true then
+                if _G.UnlockPortal == true then --== true
                     for i,v in pairs(game:GetService("Players").LocalPlayer.PlayerGui.Notifications:GetChildren()) do
                         if v.Name == "NotificationTemplate" then
                             if string.find(v.Text,"cannot") then
@@ -15563,7 +16142,7 @@ elseif type(Ability) == 'table' then
     spawn(function()
         while wait() do
             pcall(function()
-                if _G.UnlockPortal == true then
+                if _G.UnlockPortal then --== true
                     CastlePostoMansion = CFrame.new(-5084.8447265625, 316.48101806641, -3145.3752441406)
                     MansiontoCastlePos = CFrame.new(-12464.596679688, 376.30590820312, -7567.2626953125)
                     Castletophydra = CFrame.new(-5095.33984375, 316.48101806641, -3168.3134765625)
@@ -15585,13 +16164,13 @@ elseif type(Ability) == 'table' then
         end
     end)
     
-    Mh:AddButton("Max Zoom", function()
+    Misc:AddButton("Max Zoom", function()
 		while wait() do
 			game.Players.LocalPlayer.CameraMaxZoomDistance = 9223372036854718
 			end
 	end)
 
-Mh:AddButton("Kaitun Cap", function(value)
+    Misc:AddButton("Kaitun Cap", function(value)
 		local cac = require(game:GetService("Players").LocalPlayer.PlayerGui.Main.UIController.Inventory)
 		local Inventory = game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("getInventory")
 		local Items = {}
@@ -15719,11 +16298,11 @@ Mh:AddButton("Kaitun Cap", function(value)
 		tvk.FillDirectionMaxCells = 100
 		tvk.FillDirection = Enum.FillDirection.Horizontal
 
-		local cac = {"Superhuman","ElectricClaw","DragonTalon","SharkmanKarate","DeathStep","GodHuman"}
+		local cac = {"Superhuman","ElectricClaw","DragonTalon","SharkmanKarate","DeathStep","GodHuman","SaguineArt"}
 		for k,v in pairs(cac) do
 			if ListHuhu[v] and game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("Buy"..v,true) == 1 then 
 				local huhu = Instance.new("ImageLabel",MeleeG)
-				huhu.Image = "rbxassetid://16058297648"
+				huhu.Image = "rbxassetid://80725673395393"--16058297648"
 				huhu.ImageRectSize = Vector2.new(100,100)
 				huhu.ImageRectOffset = ListHuhu[v]*100
 			end
@@ -15738,7 +16317,7 @@ Mh:AddButton("Kaitun Cap", function(value)
 		thieunang.Parent = game:GetService("Players").LocalPlayer.PlayerGui.BubbleChat
 		thieunang.Position = UDim2.new(0,800,0.63,0)
 		local n = formatNumber(game.Players.LocalPlayer.Data.Fragments.Value)
-		thieunang.Text = "ÃƒÆ’Ã¢â‚¬ ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢"..n
+		thieunang.Text = "OMG!"..n
 		print("Done")
 		pcall(function() 
 			game:GetService("Players").LocalPlayer.PlayerGui.Main.MenuButton:Destroy()
@@ -15759,11 +16338,11 @@ Mh:AddButton("Kaitun Cap", function(value)
 		end)
 	end)
 	
-    Mh:AddButton("Invisible",function()
+    Misc:AddButton("Invisible",function()
         game:GetService("Players").LocalPlayer.Character.LowerTorso:Destroy()
     end)
     
-    Mh:AddButton("Click TP Tool",function()
+    Misc:AddButton("Click TP Tool",function()
         local plr = game:GetService("Players").LocalPlayer
         local mouse = plr:GetMouse()
         local tool = Instance.new("Tool")
@@ -15778,7 +16357,3894 @@ Mh:AddButton("Kaitun Cap", function(value)
         tool.Parent = plr.Backpack
     end)
     
-    Mh:AddButton("Stop All Tween",function()
+    Misc:AddButton("Stop All Tween",function()
         HyperCahaya(game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.CFrame)
         _G.Clip = false
     end)
+    
+
+    Misc:AddSeperator("Misc 2")
+
+Misc:AddToggle("Anti AFK", true, function()
+local vu = game:GetService("VirtualUser")
+repeat wait() until game:IsLoaded() 
+	game:GetService("Players").LocalPlayer.Idled:connect(function()
+    game:GetService("VirtualUser"):ClickButton2(Vector2.new())
+		vu:Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+		wait(1)
+		vu:Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+   end)
+end)
+
+	Misc:AddToggle("Auto Rejoin",function(value)
+		_G.AutoRejoin = value
+	end)
+
+	spawn(function()
+	    while wait() do
+	        if _G.AutoRejoin then
+	                getgenv().rejoin = game:GetService("CoreGui").RobloxPromptGui.promptOverlay.ChildAdded:Connect(function(child)
+                        if child.Name == 'ErrorPrompt' and child:FindFirstChild('MessageArea') and child.MessageArea:FindFirstChild("ErrorFrame") then
+                            game:GetService("TeleportService"):Teleport(game.PlaceId)
+                        end
+                     end)
+	            end
+	        end
+	    end)
+	
+	Misc:AddTextbox("Lock Money", "Please Type", true, function(value)
+	_G.LockBeli = value
+	end)
+	
+	Misc:AddTextbox("Lock Factment", "Please Type", true, function(value)
+	_G.LockFragments = value
+	end)
+
+X:AddSeperator("ESP MENU")
+
+X:AddToggle("Esp Mirage Island",false,function(a)
+        MirageIslandESP = a
+            while MirageIslandESP do wait()
+                UpdateIslandMirageESP()
+            end
+        end)
+       
+X:AddToggle("Esp Kitsune Island",false,function(a)
+        IslandKitsuneESP = a
+            while IslandKitsuneESP do wait()
+                UpdateIslandKitsuneESP()
+            end
+        end)
+    
+X:AddToggle("ESP Player",false,function(a)
+        ESPPlayer = a
+	UpdatePlayerChams()
+    end)
+    
+X:AddToggle("ESP Chest",false,function(a)
+        ChestESP = a
+	UpdateChestChams() 
+    end)
+    
+X:AddToggle("ESP Fruit",false,function(a)
+        DevilFruitESP = a
+        while DevilFruitESP do wait()
+            UpdateDevilChams() 
+        end
+    end)
+    
+X:AddToggle("ESP Real Fruit",RealFruitESP,function(a)
+        RealFruitESP = a
+	UpdateRealFruitChams() 
+    end)
+    
+X:AddToggle("ESP Flower",false,function(a)
+        FlowerESP = a
+	UpdateFlowerChams() 
+    end)
+    spawn(function()
+	    while wait(2) do
+		    if FlowerESP then
+			    UpdateFlowerChams() 
+		    end
+		    if DevilFruitESP then
+			    UpdateDevilChams() 
+		    end
+		    if ChestESP then
+			    UpdateChestChams() 
+		    end
+		    if ESPPlayer then
+			    UpdatePlayerChams()
+		    end
+		    if RealFruitESP then
+			    UpdateRealFruitChams()
+		    end
+	    end
+    end)
+X:AddToggle("ESP Island",IslandESP,function(value)
+        IslandESP = value
+        while IslandESP do wait()
+            UpdateIslandESP() 
+        end
+    end)
+X:AddToggle("Esp Npc", false, function(nec)
+    NpcESP = nec
+end)
+
+X:AddToggle("Esp Sea Beast", false, function(nec)
+    SeaESP = nec
+end)
+
+
+X:AddToggle("Esp Mob", false, function(nec)
+    MobESP = nec
+end)
+
+X:AddSeperator("Highlight")
+
+X:AddToggle("Show Chat disabled", _G.chat, function(value)
+    _G.chat = value
+    if _G.chat == true then
+local StarterGui = game:GetService('StarterGui')
+StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, false)    
+elseif _G.chat == false then
+local StarterGui = game:GetService('StarterGui')
+StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, true)    
+end
+  end)
+
+X:AddToggle("Show leaderboard disabled", _G.leaderboard, function(a)
+    _G.leaderboard = a
+    if _G.leaderboard == true then
+local StarterGui = game:GetService('StarterGui')
+game:GetService('StarterGui'):SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)   
+elseif _G.leaderboard == false then
+local StarterGui = game:GetService('StarterGui')
+game:GetService('StarterGui'):SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, true)   
+end
+  end)
+
+X:AddToggle("Highlight Mode",false,function(value)
+        if value == true then
+            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.Beli.Visible = false
+            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.HP.Visible = false
+            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.Energy.Visible = false
+            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.StatsButton.Visible = false
+            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.ShopButton.Visible = false
+            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.Skills.Visible = false
+            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.Level.Visible = false
+            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.MenuButton.Visible = false
+            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.Code.Visible = false
+            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.Settings.Visible = false
+            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.Mute.Visible = false
+            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.CrewButton.Visible = false
+        else
+            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.Beli.Visible = true
+            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.HP.Visible = true
+            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.Energy.Visible = true
+            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.StatsButton.Visible = true
+            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.ShopButton.Visible = true
+            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.Skills.Visible = true
+            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.Level.Visible = true
+            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.MenuButton.Visible = true
+            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.Code.Visible = true
+            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.Settings.Visible = true
+            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.Mute.Visible = true
+            game:GetService("Players")["LocalPlayer"].PlayerGui.Main.CrewButton.Visible = true
+        end
+    end)
+
+X:AddToggle("Graphic RTX Mode",false,function(v)
+			if v then
+				getgenv().mode = "Autumn" -- Choose from Summer and Autumn
+				local a = game.Lighting
+				a.Ambient = Color3.fromRGB(33, 33, 33)
+				a.Brightness = 0.3
+				a.ColorShift_Bottom = Color3.fromRGB(0, 0, 0)
+				a.ColorShift_Top = Color3.fromRGB(255, 247, 237)
+				a.EnvironmentDiffuseScale = 0.105
+				a.EnvironmentSpecularScale = 0.522
+				a.GlobalShadows = true
+				a.OutdoorAmbient = Color3.fromRGB(51, 54, 67)
+				a.ShadowSoftness = 0.04
+				a.GeographicLatitude = -15.525
+				a.ExposureCompensation = 0.75
+				local b = Instance.new("BloomEffect", a)
+				b.Name = "BloomEffect_Graphic"
+				b.Enabled = true
+				b.Intensity = 0.04
+				b.Size = 1900
+				b.Threshold = 0.915
+				local c = Instance.new("ColorCorrectionEffect", a)
+				c.Name = 'ColorCorrectionEffect1_Graphic'
+				c.Brightness = 0.176
+				c.Contrast = 0.39
+				c.Enabled = true
+				c.Saturation = 0.2
+				c.TintColor = Color3.fromRGB(217, 145, 57)
+				if getgenv().mode == "Summer" then
+					c.TintColor = Color3.fromRGB(255, 220, 148)
+				elseif getgenv().mode == "Autumn" then
+					c.TintColor = Color3.fromRGB(242, 193, 79)
+				end
+				local d = Instance.new("DepthOfFieldEffect", Graphic)
+				d.Name =  'DepthOfFieldEffect_Graphic'
+				d.Enabled = true
+				d.FarIntensity = 0.077
+				d.FocusDistance = 21.54
+				d.InFocusRadius = 20.77
+				d.NearIntensity = 0.277
+				local e = Instance.new("ColorCorrectionEffect", a)
+				e.Name = 'ColorCorrectionEffect2_Graphic'
+				e.Brightness = 0
+				e.Contrast = -0.07
+				e.Saturation = 0
+				e.Enabled = true
+				e.TintColor = Color3.fromRGB(255, 247, 239)
+				local e2 = Instance.new("ColorCorrectionEffect", a)
+				e2.Name = 'ColorCorrectionEffect3_Graphic'
+				e2.Brightness = 0.2
+				e2.Contrast = 0.45
+				e2.Saturation = -0.1
+				e2.Enabled = true
+				e2.TintColor = Color3.fromRGB(255, 255, 255)
+				local s = Instance.new("SunRaysEffect", a)
+				s.Name = 'SunRaysEffect_Graphic'
+				s.Enabled = false
+				s.Intensity = 0.01
+				s.Spread = 0.146
+			else
+				local a = game.Lighting
+				a.Ambient = Color3.fromRGB(170, 170, 170)
+				a.Brightness = 2
+				a.ColorShift_Bottom = Color3.fromRGB(0, 0, 0)
+				a.ColorShift_Top = Color3.fromRGB(0, 0, 0)
+				a.EnvironmentDiffuseScale = 0.105
+				a.EnvironmentSpecularScale = 0.522
+				a.GlobalShadows = false
+				a.OutdoorAmbient = Color3.fromRGB(127, 127, 127)
+				a.ShadowSoftness = 0
+				a.GeographicLatitude = 66
+				a.ExposureCompensation = 0.2
+				game:GetService("Lighting")["BloomEffect_Graphic"]:Destroy()
+				game:GetService("Lighting")["ColorCorrectionEffect1_Graphic"]:Destroy()
+				game:GetService("Lighting")["ColorCorrectionEffect2_Graphic"]:Destroy()
+				game:GetService("Lighting")["ColorCorrectionEffect3_Graphic"]:Destroy()
+				game:GetService("Lighting")["SunRaysEffect_Graphic"]:Destroy()
+			end
+		end)
+
+	---- [RainbowHaki]
+	spawn(function()
+		while wait() do
+			if RainbowHaki then
+				pcall(function()
+					if game.Players.LocalPlayer.Character.HasBuso then
+						for i,v in pairs(game.Players.LocalPlayer.Character.Humanoid:GetChildren()) do
+							if v.Name == "RightLowerArm_BusoLayer1" or v.Name == "RightLowerArm_BusoLayer2" or v.Name == "RightHand_BusoLayer1" or v.Name == "RightHand_BusoLayer2" or v.Name == "LeftLowerArm_BusoLayer1" or v.Name == "LeftLowerArm_BusoLayer2" or v.Name == "LeftHand_BusoLayer1" or v.Name == "LeftHand_BusoLayer2" or v.Name == "LeftHand_BusoLayer1" or v.Name == "RightUpperArm_BusoLayer1" or v.Name == "RightUpperArm_BusoLayer2" or v.Name == "LeftUpperArm_BusoLayer1" or v.Name == "LeftUpperArm_BusoLayer2" or v.Name == "UpperTorso_BusoLayer1" or v.Name == "UpperTorso_BusoLayer2" or v.Name == "LowerTorso_BusoLayer1" or v.Name == "LowerTorso_BusoLayer2" or v.Name == "Head_BusoLayer1" or v.Name == "Head_BusoLayer2" or v.Name == "RightUpperLeg_BusoLayer1" or v.Name == "RightUpperLeg_BusoLayer2" or v.Name == "LeftUpperLeg_BusoLayer1" or v.Name == "LeftUpperLeg_BusoLayer2" or v.Name == "RightLowerLeg_BusoLayer1" or v.Name == "RightLowerLeg_BusoLayer2" or v.Name == "LeftLowerLeg_BusoLayer1" or v.Name == "LeftLowerLeg_BusoLayer2" or v.Name == "LeftFoot_BusoLayer1" or v.Name == "LeftFoot_BusoLayer2" or v.Name == "RightFoot_BusoLayer1" or v.Name == "RightFoot_BusoLayer2" then
+								v.Color = Color3.fromHSV(tick() * 24 % 255/255, 1, 1)
+							end
+						end
+					end
+				end)
+			end
+		end
+	end)
+
+X:AddToggle("Rainbow Haki",false,function(value)
+		RainbowHaki = value
+	end)
+
+X:AddToggle("Rainbow Yoru",false,function(value)
+		RainbowYoru = value
+	end)
+
+	---- [RainbowYoru]
+
+	spawn(function()
+		while wait() do
+			if RainbowYoru then
+				pcall(function()
+					for i,v in pairs(game.Players.LocalPlayer.Character.DarkBlade.Right:GetChildren()) do
+						if v.Name == "Runes" or v.Name == "Hold" or v.Name == "Bottom" or v.Name == "Gems" or v.Name == "Wings" or v.Name == "Blade" or v.Name == "Tape" then
+							v.Color = Color3.fromHSV(tick() * 24 % 255/255, 1, 1)
+							v.Material = "Neon"
+						end
+
+					end
+				end)
+			end
+		end
+	end)
+
+	spawn(function()
+		while wait(1) do
+			if RainbowYoru then
+				pcall(function()
+					for i,v in pairs(game.Players.LocalPlayer.Character.DarkBlade.Right.Handle:GetChildren()) do
+						if v.Name == "Trail" then
+							v.LightEmission = 1
+						end
+
+					end
+				end)
+			end
+		end
+	end)
+
+	spawn(function()
+		while wait(1) do
+			if RainbowYoru then
+				pcall(function()
+					for i,v in pairs(game.Players.LocalPlayer.Character.DarkBlade.Right.Handle.Attachment0:GetChildren()) do
+						if v.Name == "Beam" then
+							v.LightEmission = 1 v.Texture = 0 v.Width0 = 0 v.Width1 = 0
+						end
+
+					end
+				end)
+			end
+		end
+	end)
+
+    X:AddSeperator("Visual Music")
+
+    X:AddButton("Play Music PHONK", function()
+        pcall(function()
+            require(game.ReplicatedStorage.Notification).new("<Color=Red> 1<Color=/>"):Display()
+            wait(1)
+            require(game.ReplicatedStorage.Notification).new("<Color=Red> 2<Color=/>"):Display()
+            wait(1)
+            require(game.ReplicatedStorage.Notification).new("<Color=Red> 3<Color=/>"):Display()
+            wait(1)
+            
+            local ID = 80725673395393 --id logo space
+            
+            function spamDecal(v)
+                if v:IsA("Part") then
+                    for i = 0, 5 do
+                        local D = Instance.new("Decal")
+                        D.Name = "SPOTIFY HUB"
+                        D.Face = i
+                        D.Parent = v
+                        D.Texture = "http://www.roblox.com/asset/?id="--..Id
+                    end
+                elseif v:IsA("Model") then
+                    for _, b in pairs(v:GetChildren()) do
+                        spamDecal(b)
+                    end
+                end
+            end
+            
+            function decalspam(id)
+                Id = id
+                for _, v in pairs(game.Workspace:GetChildren()) do
+                    if v:IsA("Part") then
+                        for i = 0, 5 do
+                            local D = Instance.new("Decal")
+                            D.Name = "Spotify Hub"
+                            D.Face = i
+                            D.Parent = v
+                            D.Texture = "http://www.roblox.com/asset/?id="--..id
+                        end
+                    elseif v:IsA("Model") then
+                        for _, b in pairs(v:GetChildren()) do
+                            spamDecal(b)
+                        end
+                    end
+                end
+            end
+            
+            decalspam(ID)
+            
+            wait(0.01)
+            local sound = Instance.new("Sound", workspace)
+            sound.Name = "Phonk Vol. 2"
+            sound.SoundId = "rbxassetid://" --sound space
+            sound:Play()
+            sound.Looped = true
+            repeat wait(1) until sound.IsLoaded == true
+            
+            wait(5)
+            local de = Instance.new("DistortionSoundEffect", sound)
+            de.Level = 0.8
+            
+            local sky = Instance.new("Sky", game:GetService("Lighting"))
+            sky.SkyboxBk = "http://www.roblox.com/asset/?id="--..ID
+            sky.SkyboxFt = "http://www.roblox.com/asset/?id="--..ID
+            sky.SkyboxLf = "http://www.roblox.com/asset/?id="--..ID
+            sky.SkyboxRt = "http://www.roblox.com/asset/?id="--..ID
+            sky.SkyboxUp = "http://www.roblox.com/asset/?id="--..ID
+        end)
+    end)
+    
+    X:AddSeperator("Graphic")
+
+    X:AddButton("Visual Space Spotify Hub", function()
+        pcall(function()
+            require(game.ReplicatedStorage.Notification).new("<Color=Red> 1<Color=/>"):Display()
+            wait(1)
+            require(game.ReplicatedStorage.Notification).new("<Color=Red> 2<Color=/>"):Display()
+            wait(1)
+            require(game.ReplicatedStorage.Notification).new("<Color=Red> 3<Color=/>"):Display()
+            wait(1)
+            
+            local ID = 80725673395393 --id logo space
+            
+            function spamDecal(v)
+                if v:IsA("Part") then
+                    for i = 0, 5 do
+                        local D = Instance.new("Decal")
+                        D.Name = "Spotify Hub"
+                        D.Face = i
+                        D.Parent = v
+                        D.Texture = "http://www.roblox.com/asset/?id="..Id
+                    end
+                elseif v:IsA("Model") then
+                    for _, b in pairs(v:GetChildren()) do
+                        spamDecal(b)
+                    end
+                end
+            end
+            
+            function decalspam(id)
+                Id = id
+                for _, v in pairs(game.Workspace:GetChildren()) do
+                    if v:IsA("Part") then
+                        for i = 0, 5 do
+                            local D = Instance.new("Decal")
+                            D.Name = "Spotify Hub"
+                            D.Face = i
+                            D.Parent = v
+                            D.Texture = "http://www.roblox.com/asset/?id="..id
+                        end
+                    elseif v:IsA("Model") then
+                        for _, b in pairs(v:GetChildren()) do
+                            spamDecal(b)
+                        end
+                    end
+                end
+            end
+            
+            decalspam(ID)
+            
+            wait(0.01)
+            local sound = Instance.new("Sound", workspace)
+            sound.Name = "Chaos"
+            sound.SoundId = "rbxassetid://1843497734" --sound space
+            sound:Play()
+            sound.Looped = true
+            repeat wait(1) until sound.IsLoaded == true
+            
+            wait(5)
+            local de = Instance.new("DistortionSoundEffect", sound)
+            de.Level = 0.8
+            
+            local sky = Instance.new("Sky", game:GetService("Lighting"))
+            sky.SkyboxBk = "http://www.roblox.com/asset/?id="..ID
+            sky.SkyboxFt = "http://www.roblox.com/asset/?id="..ID
+            sky.SkyboxLf = "http://www.roblox.com/asset/?id="..ID
+            sky.SkyboxRt = "http://www.roblox.com/asset/?id="..ID
+            sky.SkyboxUp = "http://www.roblox.com/asset/?id="--..ID
+        end)
+    end)
+
+    X:AddButton("Visual Space TokyoLagi", function()
+        pcall(function()
+            require(game.ReplicatedStorage.Notification).new("<Color=Red> 1<Color=/>"):Display()
+            wait(1)
+            require(game.ReplicatedStorage.Notification).new("<Color=Red> 2<Color=/>"):Display()
+            wait(1)
+            require(game.ReplicatedStorage.Notification).new("<Color=Red> 3<Color=/>"):Display()
+            wait(1)
+            
+            local ID = 18837785989 --id logo space
+            
+            function spamDecal(v)
+                if v:IsA("Part") then
+                    for i = 0, 5 do
+                        local D = Instance.new("Decal")
+                        D.Name = "Spotify Hub"
+                        D.Face = i
+                        D.Parent = v
+                        D.Texture = ("http://www.roblox.com/asset/?id="..Id)
+                    end
+                elseif v:IsA("Model") then
+                    for _, b in pairs(v:GetChildren()) do
+                        spamDecal(b)
+                    end
+                end
+            end
+            
+            function decalspam(id)
+                Id = id
+                for _, v in pairs(game.Workspace:GetChildren()) do
+                    if v:IsA("Part") then
+                        for i = 0, 5 do
+                            local D = Instance.new("Decal")
+                            D.Name = "Spotify Hub"
+                            D.Face = i
+                            D.Parent = v
+                            D.Texture = ("http://www.roblox.com/asset/?id="..id)
+                        end
+                    elseif v:IsA("Model") then
+                        for _, b in pairs(v:GetChildren()) do
+                            spamDecal(b)
+                        end
+                    end
+                end
+            end
+            
+            decalspam(ID)
+            
+            wait(0.01)
+            local sound = Instance.new("Sound", workspace)
+            sound.Name = "Chaos"
+            sound.SoundId = "rbxassetid://1843497734" --sound space
+            sound:Play()
+            sound.Looped = true
+            repeat wait(1) until sound.IsLoaded == true
+            
+            wait(5)
+            local de = Instance.new("DistortionSoundEffect", sound)
+            de.Level = 0.8
+            
+            local sky = Instance.new("Sky", game:GetService("Lighting"))
+            sky.SkyboxBk = "http://www.roblox.com/asset/?id="--..ID
+            sky.SkyboxFt = "http://www.roblox.com/asset/?id="--..ID
+            sky.SkyboxLf = "http://www.roblox.com/asset/?id="--..ID
+            sky.SkyboxRt = "http://www.roblox.com/asset/?id="--..ID
+            sky.SkyboxUp = "http://www.roblox.com/asset/?id="--..ID
+        end)
+    end)
+    
+    X:AddLine()
+
+    X:AddButton("FPS Boost",function()
+        pcall(function()
+            game:GetService("Lighting").FantasySky:Destroy()
+            local g = game
+            local w = g.Workspace
+            local l = g.Lighting
+            local t = w.Terrain
+            t.WaterWaveSize = 0
+            t.WaterWaveSpeed = 0
+            t.WaterReflectance = 0
+            t.WaterTransparency = 0
+            l.GlobalShadows = false
+            l.FogEnd = 9e9
+            l.Brightness = 0
+            settings().Rendering.QualityLevel = "Level01"
+            for i, v in pairs(g:GetDescendants()) do
+                if v:IsA("Part") or v:IsA("Union") or v:IsA("CornerWedgePart") or v:IsA("TrussPart") then 
+                    v.Material = "Plastic"
+                    v.Reflectance = 0
+                elseif v:IsA("Decal") or v:IsA("Texture") then
+                    v.Transparency = 1
+                elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+                    v.Lifetime = NumberRange.new(0)
+                elseif v:IsA("Explosion") then
+                    v.BlastPressure = 1
+                    v.BlastRadius = 1
+                elseif v:IsA("Fire") or v:IsA("SpotLight") or v:IsA("Smoke") or v:IsA("Sparkles") then
+                    v.Enabled = false
+                elseif v:IsA("MeshPart") then
+                    v.Material = "Plastic"
+                    v.Reflectance = 0
+                    v.TextureID = 10385902758728957
+                end
+            end
+            for i, e in pairs(l:GetChildren()) do
+                if e:IsA("BlurEffect") or e:IsA("SunRaysEffect") or e:IsA("ColorCorrectionEffect") or e:IsA("BloomEffect") or e:IsA("DepthOfFieldEffect") then
+                    e.Enabled = false
+                end
+            end
+            for i, v in pairs(game:GetService("Workspace").Camera:GetDescendants()) do
+                if v.Name == ("Water;") then
+                    v.Transparency = 1
+                    v.Material = "Plastic"
+                end
+            end
+        end)
+    end)
+
+    X:AddButton("Remove Fog",function(qww)
+	game:GetService("Lighting").LightingLayers:Destroy()
+	game:GetService("Lighting").Sky:Destroy()
+end)
+    
+X:AddButton("Always Day",function()
+    game:GetService("RunService").Heartbeat:wait() do
+    game:GetService("Lighting").ClockTime = 12
+    end
+    end)
+    
+    X:AddToggle("Remove Damage",function()
+		for i,v in pairs(game.Workspace:GetDescendants()) do
+			if v.Name == "DamageCounter" then   
+				v:Destroy()
+			end
+		end
+		for i,v in pairs(game.ReplicatedStorage:GetDescendants()) do
+			if v.Name == "DamageCounter" then   
+				v:Destroy()
+			end
+		end
+	end)
+    
+    X:AddButton("Unlock FPS",function()
+        setfpscap(9999999)
+    end)
+    
+    X:AddButton("Reduce Cpu", function()
+	for i,v in pairs(game.Workspace.Map:GetDescendants()) do
+		if v.Name == "Tavern" or v.Name == "SmileFactory" or v.Name == "Tree" or v.Name == "Rocks" or v.Name == "PartHouse" or v.Name == "Hotel" or v.Name == "WallPiece" or v.Name == "MiddlePillars" or v.Name == "Cloud" or v.Name == "PluginGrass" or v.Name == "BigHouse" or v.Name == "SmallHouse" or v.Name == "Detail" then
+			v:Destroy()
+		end
+	end 
+	for i,v in pairs(game.ReplicatedStorage.Unloaded:GetDescendants()) do
+		if v.Name == "Tavern" or v.Name == "SmileFactory" or v.Name == "Tree" or v.Name == "Rocks" or v.Name == "PartHouse" or v.Name == "Hotel" or v.Name == "WallPiece" or v.Name == "MiddlePillars" or v.Name == "Cloud" or v.Name == "PluginGrass" or v.Name == "BigHouse" or v.Name == "SmallHouse" or v.Name == "Detail" then
+			v:Destroy()
+		end
+	end
+	for i,v in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
+		if v:IsA("Accessory") or v.Name == "Pants" or v.Name == "Shirt" then
+			v:Destroy()
+		end
+	end
+	local decalsyeeted = true -- Leaving this on makes games look shitty but the fps goes up by at least 20.
+	local g = game --memek2
+	local w = g.Workspace
+	local l = g.Lighting
+	local t = w.Terrain
+	t.WaterWaveSize = 0
+	t.WaterWaveSpeed = 2
+	t.WaterReflectance = 0
+	t.WaterTransparency = 0
+	l.GlobalShadows = false
+	l.FogEnd = 9e9
+	l.Brightness = 0
+	settings().Rendering.QualityLevel = "Level01"
+	for i, v in pairs(g:GetDescendants()) do
+		if v:IsA("Part") or v:IsA("Union") or v:IsA("CornerWedgePart") or v:IsA("TrussPart") then
+			v.Material = "Plastic"
+			v.Reflectance = 0
+		elseif v:IsA("Decal") or v:IsA("Texture") and decalsyeeted then
+			v.Transparency = 1
+		elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+			v.Lifetime = NumberRange.new(0)
+		elseif v:IsA("Explosion") then
+			v.BlastPressure = 1
+			v.BlastRadius = 1
+		elseif v:IsA("Fire") or v:IsA("SpotLight") or v:IsA("Smoke") or v:IsA("Sparkles") then
+			v.Enabled = false
+		elseif v:IsA("MeshPart") then
+			v.Material = "Plastic"
+			v.Reflectance = 0
+			v.TextureID = 10385902758728957
+		end
+	end
+	for i, e in pairs(l:GetChildren()) do
+		if e:IsA("BlurEffect") or e:IsA("SunRaysEffect") or e:IsA("ColorCorrectionEffect") or e:IsA("BloomEffect") or e:IsA("DepthOfFieldEffect") then
+			e.Enabled = false
+		end
+	end
+    end)
+
+    X:AddSeperator("Anti Cheat Detector")
+
+    X:AddLabel("Please dont turn off")
+
+    X:AddLabel("75% Reduce Anti Detect System")
+
+    X:AddToggle("Anti Report User",true, function(value)
+        _G.SafeFarm1 = value
+    end)
+
+    spawn(function()
+        while wait() do
+            if _G.SafeFarm1 then
+                for i, v in pairs(game:GetService("Players").LocalPlayer.Character:GetDescendants()) do
+                    if v:IsA("LocalScript") then
+                        if
+                            v.Name == "General" or v.Name == "Shiftlock" or v.Name == "FallDamage" or v.Name == "4444" or
+                            v.Name == "CamBob" or
+                            v.Name == "JumpCD" or
+                            v.Name == "Looking" or
+                            v.Name == "Run" or
+                            v.Name == "FastAttack"
+                        then
+                            v:Destroy()
+                        end
+                    end
+                end
+                for i, v in pairs(game:GetService("Players").LocalPlayer.PlayerScripts:GetDescendants()) do
+                    if v:IsA("LocalScript") then
+                        if
+                            v.Name == "RobloxMotor6DBugFix" or v.Name == "Clans" or v.Name == "Codes" or
+                            v.Name == "CustomForceField" or
+                            v.Name == "MenuBloodSp" or
+                            v.Name == "PlayerList"
+                        then
+                            v:Destroy()
+                        end
+                    end
+                end
+            else
+                game.Players.LocalPlayer:Kick("Please don't turn off safe farm if you don't want to get banned")
+            end
+        end
+    end)
+
+    X:AddToggle("Safe Mode Farm",true, function(value)
+        _G.SafeFarm2 = value
+    end)
+
+    spawn(function()
+        while wait() do
+            if _G.SafeFarm2 then
+                for i, v in pairs(game:GetService("Players").LocalPlayer.Character:GetDescendants()) do
+                    if v:IsA("LocalScript") then
+                        if
+                            v.Name == "General" or v.Name == "Shiftlock" or v.Name == "FallDamage" or v.Name == "4444" or
+                            v.Name == "CamBob" or
+                            v.Name == "JumpCD" or
+                            v.Name == "Looking" or
+                            v.Name == "Run" or
+                            v.Name == "FastAttack"
+                        then
+                            v:Destroy()
+                        end
+                    end
+                end
+                for i, v in pairs(game:GetService("Players").LocalPlayer.PlayerScripts:GetDescendants()) do
+                    if v:IsA("LocalScript") then
+                        if
+                            v.Name == "RobloxMotor6DBugFix" or v.Name == "Clans" or v.Name == "Codes" or
+                            v.Name == "CustomForceField" or
+                            v.Name == "MenuBloodSp" or
+                            v.Name == "PlayerList"
+                        then
+                            v:Destroy()
+                        end
+                    end
+                end
+            else
+                game.Players.LocalPlayer:Kick("Please don't turn off safe farm if you don't want to get banned")
+            end
+        end
+    end)
+
+    X:AddToggle("Anti Role Back",true, function(value)
+        _G.SafeFarm3 = value
+    end)
+
+    spawn(function()
+        while wait() do
+            if _G.SafeFarm3 then
+                for i, v in pairs(game:GetService("Players").LocalPlayer.Character:GetDescendants()) do
+                    if v:IsA("LocalScript") then
+                        if
+                            v.Name == "General" or v.Name == "Shiftlock" or v.Name == "FallDamage" or v.Name == "4444" or
+                            v.Name == "CamBob" or
+                            v.Name == "JumpCD" or
+                            v.Name == "Looking" or
+                            v.Name == "Run" or
+                            v.Name == "FastAttack"
+                        then
+                            v:Destroy()
+                        end
+                    end
+                end
+                for i, v in pairs(game:GetService("Players").LocalPlayer.PlayerScripts:GetDescendants()) do
+                    if v:IsA("LocalScript") then
+                        if
+                            v.Name == "RobloxMotor6DBugFix" or v.Name == "Clans" or v.Name == "Codes" or
+                            v.Name == "CustomForceField" or
+                            v.Name == "MenuBloodSp" or
+                            v.Name == "PlayerList"
+                        then
+                            v:Destroy()
+                        end
+                    end
+                end
+            else
+                game.Players.LocalPlayer:Kick("Please don't turn off safe farm if you don't want to get banned")
+            end
+        end
+    end)
+
+    X:AddToggle("Anti Detect System",true, function(value)
+        _G.SafeFarm4 = value
+    end)
+
+    spawn(function()
+        while wait() do
+            if _G.SafeFarm4 then
+                for i, v in pairs(game:GetService("Players").LocalPlayer.Character:GetDescendants()) do
+                    if v:IsA("LocalScript") then
+                        if
+                            v.Name == "General" or v.Name == "Shiftlock" or v.Name == "FallDamage" or v.Name == "4444" or
+                            v.Name == "CamBob" or
+                            v.Name == "JumpCD" or
+                            v.Name == "Looking" or
+                            v.Name == "Run" or
+                            v.Name == "FastAttack"
+                        then
+                            v:Destroy()
+                        end
+                    end
+                end
+                for i, v in pairs(game:GetService("Players").LocalPlayer.PlayerScripts:GetDescendants()) do
+                    if v:IsA("LocalScript") then
+                        if
+                            v.Name == "RobloxMotor6DBugFix" or v.Name == "Clans" or v.Name == "Codes" or
+                            v.Name == "CustomForceField" or
+                            v.Name == "MenuBloodSp" or
+                            v.Name == "PlayerList"
+                        then
+                            v:Destroy()
+                        end
+                    end
+                end
+            else
+                game.Players.LocalPlayer:Kick("Please don't turn off safe farm if you don't want to get banned")
+            end
+        end
+    end)
+
+    VisualX:AddSeperator("Join Webhook")
+    
+VisualX:AddTextbox("Paste Webhook Job Id", true, function(value)
+    local jobId = value:match("SPOTIFY%-JOBID_(.+)")
+    if jobId then
+        _G.Job = jobId
+    else
+        _G.Job = value 
+    end
+end)
+
+VisualX:AddButton("Auto Join Webhook", function()
+    if _G.Job and _G.Job ~= "" then
+        game:GetService("TeleportService"):TeleportToPlaceInstance(game.placeId, _G.Job, game.Players.LocalPlayer)
+    else
+        warn("Job ID tidak valid atau kosong")
+    end
+end)
+
+VisualX:AddButton("Rejoin Server",function()
+    game:GetService("TeleportService"):Teleport(game.PlaceId, game:GetService("Players").LocalPlayer)
+end)
+
+VisualX:AddButton("Server Hop",function()
+    Hop()
+end)
+--[[
+    VisualX:AddSeperator("Auto Hop Server")
+    
+    VisualX:AddLabel("Click And Wait...")
+
+    VisualX:AddToggle("Hop Low Server", _G.HopServerFM2, function(value)
+        _G.HopServerFM2 = value
+    end)
+    
+    local function fetchJobDetails()
+        local apiUrl = "https://medusastore.tech/api/webhook?info=LOWSERVER"
+        local success, response = pcall(function()
+            return game:GetService("HttpService"):GetAsync(apiUrl)
+        end)
+    
+        if success then
+            print("Response API:", response) 
+            local data = game:GetService("HttpService"):JSONDecode(response)
+            local jobDetails = {}
+            if data and data.data and data.data.embeds then
+                for _, embed in pairs(data.data.embeds) do
+                    if embed.fields then
+                        local placeId
+                        local jobId
+                        for _, field in pairs(embed.fields) do
+                            if field.name == "Script Join" then
+                                local scriptValue = field.value
+                                placeId = scriptValue:match("TeleportToPlaceInstance%((%d+),")
+                            end
+                            -- Ambil Job ID
+                            if field.name:find("Job ID") then
+                                jobId = field.value
+                            end
+                        end
+                        -- Simpan Place ID dan Job ID jika valid
+                        if placeId and jobId then
+                            table.insert(jobDetails, { placeId = placeId, jobId = jobId })
+                        end
+                    end
+                end
+            end
+            return jobDetails
+        else
+            print("Gagal mendapatkan detail dari API:", response)
+        end
+    
+        return {}
+    end
+    
+    -- Tabel untuk menyimpan Job Details (Place ID dan Job ID)
+    local validJobDetails = {}
+    
+    -- Task untuk memperbarui Job Details setiap 10 detik
+    spawn(function()
+        while task.wait(10) do 
+            if _G.HopServerFM2 then
+                validJobDetails = fetchJobDetails()
+                print("Valid Job Details diperbarui:", validJobDetails)
+            end
+        end
+    end)
+    
+    -- Task untuk teleportasi ke server tujuan
+    spawn(function()
+        while task.wait() do
+            if _G.HopServerFM2 and #validJobDetails > 0 then
+                local jobDetail = validJobDetails[1]
+                table.remove(validJobDetails, 1) -- Hapus detail setelah digunakan
+                local success, errorMsg = pcall(function()
+                    game:GetService("TeleportService"):TeleportToPlaceInstance(
+                        tonumber(jobDetail.placeId), -- Gunakan Place ID dari API
+                        jobDetail.jobId, -- Gunakan Job ID dari API
+                        game:GetService("Players").LocalPlayer
+                    )
+                end)
+    
+                if not success then
+                    print("Gagal melakukan teleportasi:", errorMsg)
+                else
+                    print("Berhasil teleportasi ke server dengan Place ID:", jobDetail.placeId, "dan Job ID:", jobDetail.jobId)
+                end
+            end
+        end
+    end)
+    ]]
+
+    VisualX:AddSeperator("Hop Server Fruits")
+
+    VisualX:AddToggle("Hop Server Random Fruits", _G.HopServerRandomFruits, function(value)
+        _G.HopServerRandomFruits = value
+    end)
+    
+    local function identifyExecutor()
+        local executor = identifyexecutor()
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "SPOTIFY HUB",
+            Text = "Executor : " .. executor,
+            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+            Duration = 1.5
+        })
+        return executor
+    end
+    
+    local function makeHttpRequest(url, executor)
+        local response
+        if executor == "Fluxus" then
+            response = fluxus.request({ Url = url, Method = "GET" })
+        elseif executor == "Synapse X" then
+            response = syn.request({ Url = url, Method = "GET" })
+        elseif executor == "Criptic" then
+            response = criptic.request({ Url = url, Method = "GET" })
+        elseif executor == "Arceus X Neo" then
+            response = arceus.request({ Url = url, Method = "GET" })
+        elseif executor == "Codex" then
+            response = codex.request({ Url = url, Method = "GET" })
+        elseif executor == "Trigon" then
+            response = trigon.request({ Url = url, Method = "GET" })
+        elseif executor == "Vega X" then
+            response = vegax.request({ Url = url, Method = "GET" })
+        elseif executor == "Solara" then
+            response = solara.request({ Url = url, Method = "GET" })
+        elseif executor == "Wave" then
+            response = wave.request({ Url = url, Method = "GET" })
+        elseif executor == "Kiwi X" then
+            response = kiwix.request({ Url = url, Method = "GET" })
+        elseif executor == "Delta" then
+            response = request({ Url = url, Method = "GET" })
+        elseif executor == "KRNL" then
+            response = http_request({ Url = url, Method = "GET" })
+        else
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "SPOTIFY HUB",
+                Text = "Executor Not Supported!",
+                Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                Duration = 1.5
+            })
+            return nil
+        end
+    
+        if response and response.Success then
+            return response.Body
+        else
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "SPOTIFY HUB",
+                Text = "Hop Server Error. Wait for retry.",
+                Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                Duration = 1.5
+            })
+            return nil
+        end
+    end
+    
+    local function fetchJobDetails()
+        local apiUrl = "https://medusastore.tech/api/check?info=FRUITSPAWN"
+        local executor = identifyExecutor()
+        local response = makeHttpRequest(apiUrl, executor)
+    
+        if response then
+            local data = game:GetService("HttpService"):JSONDecode(response)
+            local jobDetails = {}
+            if data and data.data and data.data.embeds then
+                for _, embed in pairs(data.data.embeds) do
+                    if embed.fields then
+                        local placeId, jobId
+                        for _, field in pairs(embed.fields) do
+                            if field.name == "Script Join" then
+                                placeId = field.value:match("TeleportToPlaceInstance%((%d+),")
+                            elseif field.name:find("Job ID") then
+                                jobId = field.value
+                            end
+                        end
+                        if placeId and jobId then
+                            table.insert(jobDetails, { placeId = placeId, jobId = jobId })
+                        end
+                    end
+                end
+            end
+            return jobDetails
+        end
+        return {}
+    end
+    
+    local function teleportToServer(jobDetails)
+        local maxRetries = 3 
+        local retryCount = 0
+    
+        while retryCount < maxRetries do
+            if #jobDetails > 0 then
+                local job = jobDetails[1] 
+                local placeId = tonumber(job.placeId)
+                local jobId = job.jobId
+    
+                if placeId and jobId then
+                    game.StarterGui:SetCore("SendNotification", {
+                        Title = "SPOTIFY HUB",
+                        Text = "Loading Join Random Fruits",
+                        Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                        Duration = 1 
+                    })
+    
+                    task.wait(1.2) 
+                    local success, errorMsg = pcall(function()
+                        game:GetService("TeleportService"):TeleportToPlaceInstance(
+                            placeId,
+                            jobId,
+                            game:GetService("Players").LocalPlayer
+                        )
+                    end)
+    
+                    if success then
+                        return
+                    else
+                        retryCount = retryCount + 1
+                        game.StarterGui:SetCore("SendNotification", {
+                            Title = "SPOTIFY HUB",
+                            Text = "Retrying... Attempt: " .. retryCount,
+                            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                            Duration = 2.5
+                        })
+                    end
+                end
+            end
+    
+            if retryCount < maxRetries then
+                jobDetails = fetchJobDetails()
+            end
+    
+            task.wait(5) 
+        end
+    
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "SPOTIFY HUB",
+            Text = "All Attempts Failed. Waiting for next retry.",
+            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+            Duration = 2.5
+        })
+    end
+    
+    spawn(function()
+        while true do
+            if _G.HopServerRandomFruits then
+                local jobDetails = fetchJobDetails()
+                teleportToServer(jobDetails)
+            end
+            task.wait(10) 
+        end
+    end)
+
+    VisualX:AddToggle("Hop Server Legendary Fruits", _G.HopServerLegendaryFruits, function(value)
+        _G.HopServerLegendaryFruits = value
+    end)
+    
+    local function identifyExecutor()
+        local executor = identifyexecutor()
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "SPOTIFY HUB",
+            Text = "Executor : " .. executor,
+            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+            Duration = 1.5
+        })
+        return executor
+    end
+    
+    local function makeHttpRequest(url, executor)
+        local response
+        if executor == "Fluxus" then
+            response = fluxus.request({ Url = url, Method = "GET" })
+        elseif executor == "Synapse X" then
+            response = syn.request({ Url = url, Method = "GET" })
+        elseif executor == "Criptic" then
+            response = criptic.request({ Url = url, Method = "GET" })
+        elseif executor == "Arceus X Neo" then
+            response = arceus.request({ Url = url, Method = "GET" })
+        elseif executor == "Codex" then
+            response = codex.request({ Url = url, Method = "GET" })
+        elseif executor == "Trigon" then
+            response = trigon.request({ Url = url, Method = "GET" })
+        elseif executor == "Vega X" then
+            response = vegax.request({ Url = url, Method = "GET" })
+        elseif executor == "Solara" then
+            response = solara.request({ Url = url, Method = "GET" })
+        elseif executor == "Wave" then
+            response = wave.request({ Url = url, Method = "GET" })
+        elseif executor == "Kiwi X" then
+            response = kiwix.request({ Url = url, Method = "GET" })
+        elseif executor == "Delta" then
+            response = request({ Url = url, Method = "GET" })
+        elseif executor == "KRNL" then
+            response = http_request({ Url = url, Method = "GET" })
+        else
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "SPOTIFY HUB",
+                Text = "Executor Not Supported!",
+                Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                Duration = 1.5
+            })
+            return nil
+        end
+    
+        if response and response.Success then
+            return response.Body
+        else
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "SPOTIFY HUB",
+                Text = "Hop Server Error. Wait for retry.",
+                Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                Duration = 1.5
+            })
+            return nil
+        end
+    end
+    
+    local function fetchJobDetails()
+        local apiUrl = "https://medusastore.tech/api/check?info=LEGENDARYFRUITS"
+        local executor = identifyExecutor()
+        local response = makeHttpRequest(apiUrl, executor)
+    
+        if response then
+            local data = game:GetService("HttpService"):JSONDecode(response)
+            local jobDetails = {}
+            if data and data.data and data.data.embeds then
+                for _, embed in pairs(data.data.embeds) do
+                    if embed.fields then
+                        local placeId, jobId
+                        for _, field in pairs(embed.fields) do
+                            if field.name == "Script Join" then
+                                placeId = field.value:match("TeleportToPlaceInstance%((%d+),")
+                            elseif field.name:find("Job ID") then
+                                jobId = field.value
+                            end
+                        end
+                        if placeId and jobId then
+                            table.insert(jobDetails, { placeId = placeId, jobId = jobId })
+                        end
+                    end
+                end
+            end
+            return jobDetails
+        end
+        return {}
+    end
+    
+    local function teleportToServer(jobDetails)
+        local maxRetries = 3 
+        local retryCount = 0
+    
+        while retryCount < maxRetries do
+            if #jobDetails > 0 then
+                local job = jobDetails[1] 
+                local placeId = tonumber(job.placeId)
+                local jobId = job.jobId
+    
+                if placeId and jobId then
+                    game.StarterGui:SetCore("SendNotification", {
+                        Title = "SPOTIFY HUB",
+                        Text = "Loading Join Legendary Fruits",
+                        Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                        Duration = 1 
+                    })
+    
+                    task.wait(1.2) 
+                    local success, errorMsg = pcall(function()
+                        game:GetService("TeleportService"):TeleportToPlaceInstance(
+                            placeId,
+                            jobId,
+                            game:GetService("Players").LocalPlayer
+                        )
+                    end)
+    
+                    if success then
+                        return
+                    else
+                        retryCount = retryCount + 1
+                        game.StarterGui:SetCore("SendNotification", {
+                            Title = "SPOTIFY HUB",
+                            Text = "Retrying... Attempt: " .. retryCount,
+                            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                            Duration = 2.5
+                        })
+                    end
+                end
+            end
+    
+            if retryCount < maxRetries then
+                jobDetails = fetchJobDetails()
+            end
+    
+            task.wait(5) 
+        end
+    
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "SPOTIFY HUB",
+            Text = "All Attempts Failed. Waiting for next retry.",
+            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+            Duration = 2.5
+        })
+    end
+    
+    spawn(function()
+        while true do
+            if _G.HopServerLegendaryFruits then
+                local jobDetails = fetchJobDetails()
+                teleportToServer(jobDetails)
+            end
+            task.wait(10) 
+        end
+    end)
+
+    VisualX:AddToggle("Hop Server Mythical Fruits", _G.HopServerMyticalFruits, function(value)
+        _G.HopServerMyticalFruits = value
+    end)
+    
+    local function identifyExecutor()
+        local executor = identifyexecutor()
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "SPOTIFY HUB",
+            Text = "Executor : " .. executor,
+            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+            Duration = 1.5
+        })
+        return executor
+    end
+    
+    local function makeHttpRequest(url, executor)
+        local response
+        if executor == "Fluxus" then
+            response = fluxus.request({ Url = url, Method = "GET" })
+        elseif executor == "Synapse X" then
+            response = syn.request({ Url = url, Method = "GET" })
+        elseif executor == "Criptic" then
+            response = criptic.request({ Url = url, Method = "GET" })
+        elseif executor == "Arceus X Neo" then
+            response = arceus.request({ Url = url, Method = "GET" })
+        elseif executor == "Codex" then
+            response = codex.request({ Url = url, Method = "GET" })
+        elseif executor == "Trigon" then
+            response = trigon.request({ Url = url, Method = "GET" })
+        elseif executor == "Vega X" then
+            response = vegax.request({ Url = url, Method = "GET" })
+        elseif executor == "Solara" then
+            response = solara.request({ Url = url, Method = "GET" })
+        elseif executor == "Wave" then
+            response = wave.request({ Url = url, Method = "GET" })
+        elseif executor == "Kiwi X" then
+            response = kiwix.request({ Url = url, Method = "GET" })
+        elseif executor == "Delta" then
+            response = request({ Url = url, Method = "GET" })
+        elseif executor == "KRNL" then
+            response = http_request({ Url = url, Method = "GET" })
+        else
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "SPOTIFY HUB",
+                Text = "Executor Not Supported!",
+                Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                Duration = 1.5
+            })
+            return nil
+        end
+    
+        if response and response.Success then
+            return response.Body
+        else
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "SPOTIFY HUB",
+                Text = "Hop Server Error. Wait for retry.",
+                Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                Duration = 1.5
+            })
+            return nil
+        end
+    end
+    
+    local function fetchJobDetails()
+        local apiUrl = "https://medusastore.tech/api/check?info=MYTICALFRUITS"
+        local executor = identifyExecutor()
+        local response = makeHttpRequest(apiUrl, executor)
+    
+        if response then
+            local data = game:GetService("HttpService"):JSONDecode(response)
+            local jobDetails = {}
+            if data and data.data and data.data.embeds then
+                for _, embed in pairs(data.data.embeds) do
+                    if embed.fields then
+                        local placeId, jobId
+                        for _, field in pairs(embed.fields) do
+                            if field.name == "Script Join" then
+                                placeId = field.value:match("TeleportToPlaceInstance%((%d+),")
+                            elseif field.name:find("Job ID") then
+                                jobId = field.value
+                            end
+                        end
+                        if placeId and jobId then
+                            table.insert(jobDetails, { placeId = placeId, jobId = jobId })
+                        end
+                    end
+                end
+            end
+            return jobDetails
+        end
+        return {}
+    end
+    
+    local function teleportToServer(jobDetails)
+        local maxRetries = 3 
+        local retryCount = 0
+    
+        while retryCount < maxRetries do
+            if #jobDetails > 0 then
+                local job = jobDetails[1] 
+                local placeId = tonumber(job.placeId)
+                local jobId = job.jobId
+    
+                if placeId and jobId then
+                    game.StarterGui:SetCore("SendNotification", {
+                        Title = "SPOTIFY HUB",
+                        Text = "Loading Join Full Moon",
+                        Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                        Duration = 1 
+                    })
+    
+                    task.wait(1.2) 
+                    local success, errorMsg = pcall(function()
+                        game:GetService("TeleportService"):TeleportToPlaceInstance(
+                            placeId,
+                            jobId,
+                            game:GetService("Players").LocalPlayer
+                        )
+                    end)
+    
+                    if success then
+                        return
+                    else
+                        retryCount = retryCount + 1
+                        game.StarterGui:SetCore("SendNotification", {
+                            Title = "SPOTIFY HUB",
+                            Text = "Retrying... Attempt: " .. retryCount,
+                            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                            Duration = 2.5
+                        })
+                    end
+                end
+            end
+    
+            if retryCount < maxRetries then
+                jobDetails = fetchJobDetails()
+            end
+    
+            task.wait(5) 
+        end
+    
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "SPOTIFY HUB",
+            Text = "All Attempts Failed. Waiting for next retry.",
+            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+            Duration = 2.5
+        })
+    end
+    
+    spawn(function()
+        while true do
+            if _G.HopServerMyticalFruits then
+                local jobDetails = fetchJobDetails()
+                teleportToServer(jobDetails)
+            end
+            task.wait(10) 
+        end
+    end)
+    
+    VisualX:AddSeperator("Hop Server Moon")
+
+    VisualX:AddToggle("Hop Server Full Moon", _G.HopServerFM, function(value)
+        _G.HopServerFM = value
+    end)
+    
+    local function identifyExecutor()
+        local executor = identifyexecutor()  
+        --print("Executor terdeteksi:", executor)
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "SPOTIFY HUB", 
+            Text = "Executor : ".. executor ,
+            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+            Duration = 2.5
+        })
+        return executor
+    end
+    
+    local function makeHttpRequest(url, executor)
+        local response
+        if executor == "Fluxus" then
+            response = fluxus.request({ Url = url, Method = "GET" })
+        elseif executor == "Synapse X" then
+            response = syn.request({ Url = url, Method = "GET" })
+        elseif executor == "Criptic" then
+            response = criptic.request({ Url = url, Method = "GET" })
+        elseif executor == "Arceus X Neo" then
+            response = arceus.request({ Url = url, Method = "GET" })
+        elseif executor == "Codex" then
+            response = codex.request({ Url = url, Method = "GET" })
+        elseif executor == "Trigon" then
+            response = trigon.request({ Url = url, Method = "GET" })
+        elseif executor == "Vega X" then
+            response = vegax.request({ Url = url, Method = "GET" })
+        elseif executor == "Solara" then
+            response = solara.request({ Url = url, Method = "GET" })
+        elseif executor == "Wave" then
+            response = wave.request({ Url = url, Method = "GET" })
+        elseif executor == "Kiwi X" then
+            response = kiwix.request({ Url = url, Method = "GET" })
+        elseif executor == "Delta" then
+            response = request({ Url = url, Method = "GET" })
+        elseif executor == "KRNL" then
+            response = http_request({ Url = url, Method = "GET" })
+        else
+            --print("Executor tidak terdeteksi atau tidak didukung!")
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "SPOTIFY HUB", 
+                Text = "Executor Not Support!!" ,
+                Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                Duration = 2.5
+            })
+            return nil
+        end
+    
+        if response and response.Success then
+            return response.Body
+        else
+            --print("Gagal membuat permintaan HTTP!")
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "SPOTIFY HUB", 
+                Text = "Hop Server Error Wait For Restart" ,
+                Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                Duration = 2.5
+            })
+            return nil
+        end
+    end
+    
+    local function fetchJobDetails()
+        local apiUrl = "https://medusastore.tech/api/check?info=FULLMOON"
+        local executor = identifyExecutor()
+        local response = makeHttpRequest(apiUrl, executor)
+    
+        if response then
+            local data = game:GetService("HttpService"):JSONDecode(response)
+            local jobDetails = {}
+            if data and data.data and data.data.embeds then
+                for _, embed in pairs(data.data.embeds) do
+                    if embed.fields then
+                        local placeId, jobId
+                        for _, field in pairs(embed.fields) do
+                            if field.name == "Script Join" then
+                                placeId = field.value:match("TeleportToPlaceInstance%((%d+),")
+                            elseif field.name:find("Job ID") then
+                                jobId = field.value
+                            end
+                        end
+                        if placeId and jobId then
+                            table.insert(jobDetails, { placeId = placeId, jobId = jobId })
+                        end
+                    end
+                end
+            end
+            return jobDetails
+        end
+        return {}
+    end
+    
+    local function teleportToServer(jobDetails)
+        if #jobDetails > 0 then
+            local job = jobDetails[1]
+            local placeId = tonumber(job.placeId)
+            local jobId = job.jobId
+    
+            if placeId and jobId then
+                local success, errorMsg = pcall(function()
+                    game:GetService("TeleportService"):TeleportToPlaceInstance(
+                        placeId,
+                        jobId,
+                        game:GetService("Players").LocalPlayer
+                    )
+                end)
+    
+                if success then
+                    --print("Berhasil teleportasi ke server dengan Job ID:", jobId)
+                    game.StarterGui:SetCore("SendNotification", {
+                        Title = "SPOTIFY HUB", 
+                        Text = "Loading Join Full Moon" ,
+                        Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                        Duration = 2.5
+                    })
+                else
+                    --print("Gagal teleportasi:", errorMsg)
+                    game.StarterGui:SetCore("SendNotification", {
+                        Title = "SPOTIFY HUB", 
+                        Text = "Hop Server Error, wait..." ,
+                        Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                        Duration = 2.5
+                    })
+                end
+            else
+                --print("Tidak ada data valid untuk teleportasi.")
+                game.StarterGui:SetCore("SendNotification", {
+                    Title = "SPOTIFY HUB", 
+                    Text = "Hop Server Error, wait..." ,
+                    Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                    Duration = 2.5
+                })
+            end
+        else
+            --print("Tidak ada Job Details untuk teleportasi.")
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "SPOTIFY HUB", 
+                Text = "Hop Server Error, wait..." ,
+                Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                Duration = 2.5
+            })
+        end
+    end
+    
+    spawn(function()
+        while true do
+            if _G.HopServerFM then
+                local jobDetails = fetchJobDetails()
+                teleportToServer(jobDetails)
+            end
+            task.wait(10)  
+        end
+    end)
+
+    VisualX:AddToggle("Hop Server Near Moon", _G.HopServerNearMoon, function(value)
+        _G.HopServerNearMoon = value
+    end)
+    
+    local function identifyExecutor()
+        local executor = identifyexecutor()
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "SPOTIFY HUB",
+            Text = "Executor : " .. executor,
+            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+            Duration = 1.5
+        })
+        return executor
+    end
+    
+    local function makeHttpRequest(url, executor)
+        local response
+        if executor == "Fluxus" then
+            response = fluxus.request({ Url = url, Method = "GET" })
+        elseif executor == "Synapse X" then
+            response = syn.request({ Url = url, Method = "GET" })
+        elseif executor == "Criptic" then
+            response = criptic.request({ Url = url, Method = "GET" })
+        elseif executor == "Arceus X Neo" then
+            response = arceus.request({ Url = url, Method = "GET" })
+        elseif executor == "Codex" then
+            response = codex.request({ Url = url, Method = "GET" })
+        elseif executor == "Trigon" then
+            response = trigon.request({ Url = url, Method = "GET" })
+        elseif executor == "Vega X" then
+            response = vegax.request({ Url = url, Method = "GET" })
+        elseif executor == "Solara" then
+            response = solara.request({ Url = url, Method = "GET" })
+        elseif executor == "Wave" then
+            response = wave.request({ Url = url, Method = "GET" })
+        elseif executor == "Kiwi X" then
+            response = kiwix.request({ Url = url, Method = "GET" })
+        elseif executor == "Delta" then
+            response = request({ Url = url, Method = "GET" })
+        elseif executor == "KRNL" then
+            response = http_request({ Url = url, Method = "GET" })
+        else
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "SPOTIFY HUB",
+                Text = "Executor Not Supported!",
+                Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                Duration = 1.5
+            })
+            return nil
+        end
+    
+        if response and response.Success then
+            return response.Body
+        else
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "SPOTIFY HUB",
+                Text = "Hop Server Error. Wait for retry.",
+                Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                Duration = 1.5
+            })
+            return nil
+        end
+    end
+    
+    local function fetchJobDetails()
+        local apiUrl = "https://medusastore.tech/api/check?info=NEARMOON"
+        local executor = identifyExecutor()
+        local response = makeHttpRequest(apiUrl, executor)
+    
+        if response then
+            local data = game:GetService("HttpService"):JSONDecode(response)
+            local jobDetails = {}
+            if data and data.data and data.data.embeds then
+                for _, embed in pairs(data.data.embeds) do
+                    if embed.fields then
+                        local placeId, jobId
+                        for _, field in pairs(embed.fields) do
+                            if field.name == "Script Join" then
+                                placeId = field.value:match("TeleportToPlaceInstance%((%d+),")
+                            elseif field.name:find("Job ID") then
+                                jobId = field.value
+                            end
+                        end
+                        if placeId and jobId then
+                            table.insert(jobDetails, { placeId = placeId, jobId = jobId })
+                        end
+                    end
+                end
+            end
+            return jobDetails
+        end
+        return {}
+    end
+    
+    local function teleportToServer(jobDetails)
+        local maxRetries = 3 
+        local retryCount = 0
+    
+        while retryCount < maxRetries do
+            if #jobDetails > 0 then
+                local job = jobDetails[1] 
+                local placeId = tonumber(job.placeId)
+                local jobId = job.jobId
+    
+                if placeId and jobId then
+                    game.StarterGui:SetCore("SendNotification", {
+                        Title = "SPOTIFY HUB",
+                        Text = "Loading Join Near Moon",
+                        Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                        Duration = 1 
+                    })
+    
+                    task.wait(1.2) 
+                    local success, errorMsg = pcall(function()
+                        game:GetService("TeleportService"):TeleportToPlaceInstance(
+                            placeId,
+                            jobId,
+                            game:GetService("Players").LocalPlayer
+                        )
+                    end)
+    
+                    if success then
+                        return
+                    else
+                        retryCount = retryCount + 1
+                        game.StarterGui:SetCore("SendNotification", {
+                            Title = "SPOTIFY HUB",
+                            Text = "Retrying... Attempt: " .. retryCount,
+                            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                            Duration = 2.5
+                        })
+                    end
+                end
+            end
+    
+            if retryCount < maxRetries then
+                jobDetails = fetchJobDetails()
+            end
+    
+            task.wait(5) 
+        end
+    
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "SPOTIFY HUB",
+            Text = "All Attempts Failed. Waiting for next retry.",
+            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+            Duration = 2.5
+        })
+    end
+    
+    spawn(function()
+        while true do
+            if _G.HopServerNearMoon then
+                local jobDetails = fetchJobDetails()
+                teleportToServer(jobDetails)
+            end
+            task.wait(10) 
+        end
+    end)
+
+    VisualX:AddSeperator("Hop Server Island")
+
+    VisualX:AddToggle("Hop Server Mirage Island", _G.HopServerMirageIsland, function(value)
+        _G.HopServerMirageIsland = value
+    end)
+    
+    local function identifyExecutor()
+        local executor = identifyexecutor()
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "SPOTIFY HUB",
+            Text = "Executor : " .. executor,
+            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+            Duration = 1.5
+        })
+        return executor
+    end
+    
+    local function makeHttpRequest(url, executor)
+        local response
+        if executor == "Fluxus" then
+            response = fluxus.request({ Url = url, Method = "GET" })
+        elseif executor == "Synapse X" then
+            response = syn.request({ Url = url, Method = "GET" })
+        elseif executor == "Criptic" then
+            response = criptic.request({ Url = url, Method = "GET" })
+        elseif executor == "Arceus X Neo" then
+            response = arceus.request({ Url = url, Method = "GET" })
+        elseif executor == "Codex" then
+            response = codex.request({ Url = url, Method = "GET" })
+        elseif executor == "Trigon" then
+            response = trigon.request({ Url = url, Method = "GET" })
+        elseif executor == "Vega X" then
+            response = vegax.request({ Url = url, Method = "GET" })
+        elseif executor == "Solara" then
+            response = solara.request({ Url = url, Method = "GET" })
+        elseif executor == "Wave" then
+            response = wave.request({ Url = url, Method = "GET" })
+        elseif executor == "Kiwi X" then
+            response = kiwix.request({ Url = url, Method = "GET" })
+        elseif executor == "Delta" then
+            response = request({ Url = url, Method = "GET" })
+        elseif executor == "KRNL" then
+            response = http_request({ Url = url, Method = "GET" })
+        else
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "SPOTIFY HUB",
+                Text = "Executor Not Supported!",
+                Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                Duration = 1.5
+            })
+            return nil
+        end
+    
+        if response and response.Success then
+            return response.Body
+        else
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "SPOTIFY HUB",
+                Text = "Hop Server Error. Wait for retry.",
+                Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                Duration = 1.5
+            })
+            return nil
+        end
+    end
+    
+    local function fetchJobDetails()
+        local apiUrl = "https://medusastore.tech/api/check?info=MIRAGEISLAND"
+        local executor = identifyExecutor()
+        local response = makeHttpRequest(apiUrl, executor)
+    
+        if response then
+            local data = game:GetService("HttpService"):JSONDecode(response)
+            local jobDetails = {}
+            if data and data.data and data.data.embeds then
+                for _, embed in pairs(data.data.embeds) do
+                    if embed.fields then
+                        local placeId, jobId
+                        for _, field in pairs(embed.fields) do
+                            if field.name == "Script Join" then
+                                placeId = field.value:match("TeleportToPlaceInstance%((%d+),")
+                            elseif field.name:find("Job ID") then
+                                jobId = field.value
+                            end
+                        end
+                        if placeId and jobId then
+                            table.insert(jobDetails, { placeId = placeId, jobId = jobId })
+                        end
+                    end
+                end
+            end
+            return jobDetails
+        end
+        return {}
+    end
+    
+    local function teleportToServer(jobDetails)
+        local maxRetries = 3 
+        local retryCount = 0
+    
+        while retryCount < maxRetries do
+            if #jobDetails > 0 then
+                local job = jobDetails[1] 
+                local placeId = tonumber(job.placeId)
+                local jobId = job.jobId
+    
+                if placeId and jobId then
+                    game.StarterGui:SetCore("SendNotification", {
+                        Title = "SPOTIFY HUB",
+                        Text = "Loading Join Mirage Island",
+                        Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                        Duration = 1 
+                    })
+    
+                    task.wait(1.2) 
+                    local success, errorMsg = pcall(function()
+                        game:GetService("TeleportService"):TeleportToPlaceInstance(
+                            placeId,
+                            jobId,
+                            game:GetService("Players").LocalPlayer
+                        )
+                    end)
+    
+                    if success then
+                        return
+                    else
+                        retryCount = retryCount + 1
+                        game.StarterGui:SetCore("SendNotification", {
+                            Title = "SPOTIFY HUB",
+                            Text = "Retrying... Attempt: " .. retryCount,
+                            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                            Duration = 2.5
+                        })
+                    end
+                end
+            end
+    
+            if retryCount < maxRetries then
+                jobDetails = fetchJobDetails()
+            end
+    
+            task.wait(5) 
+        end
+    
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "SPOTIFY HUB",
+            Text = "All Attempts Failed. Waiting for next retry.",
+            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+            Duration = 2.5
+        })
+    end
+    
+    spawn(function()
+        while true do
+            if _G.HopServerMirageIsland then
+                local jobDetails = fetchJobDetails()
+                teleportToServer(jobDetails)
+            end
+            task.wait(10) 
+        end
+    end)
+
+    VisualX:AddToggle("Hop Server Kitsune Island", _G.HopServerKitsuneIsland, function(value)
+        _G.HopServerKitsuneIsland = value
+    end)
+    
+    local function identifyExecutor()
+        local executor = identifyexecutor()
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "SPOTIFY HUB",
+            Text = "Executor : " .. executor,
+            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+            Duration = 1.5
+        })
+        return executor
+    end
+    
+    local function makeHttpRequest(url, executor)
+        local response
+        if executor == "Fluxus" then
+            response = fluxus.request({ Url = url, Method = "GET" })
+        elseif executor == "Synapse X" then
+            response = syn.request({ Url = url, Method = "GET" })
+        elseif executor == "Criptic" then
+            response = criptic.request({ Url = url, Method = "GET" })
+        elseif executor == "Arceus X Neo" then
+            response = arceus.request({ Url = url, Method = "GET" })
+        elseif executor == "Codex" then
+            response = codex.request({ Url = url, Method = "GET" })
+        elseif executor == "Trigon" then
+            response = trigon.request({ Url = url, Method = "GET" })
+        elseif executor == "Vega X" then
+            response = vegax.request({ Url = url, Method = "GET" })
+        elseif executor == "Solara" then
+            response = solara.request({ Url = url, Method = "GET" })
+        elseif executor == "Wave" then
+            response = wave.request({ Url = url, Method = "GET" })
+        elseif executor == "Kiwi X" then
+            response = kiwix.request({ Url = url, Method = "GET" })
+        elseif executor == "Delta" then
+            response = request({ Url = url, Method = "GET" })
+        elseif executor == "KRNL" then
+            response = http_request({ Url = url, Method = "GET" })
+        else
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "SPOTIFY HUB",
+                Text = "Executor Not Supported!",
+                Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                Duration = 1.5
+            })
+            return nil
+        end
+    
+        if response and response.Success then
+            return response.Body
+        else
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "SPOTIFY HUB",
+                Text = "Hop Server Error. Wait for retry.",
+                Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                Duration = 1.5
+            })
+            return nil
+        end
+    end
+    
+    local function fetchJobDetails()
+        local apiUrl = "https://medusastore.tech/api/check?info=KITSUNEISLAND"
+        local executor = identifyExecutor()
+        local response = makeHttpRequest(apiUrl, executor)
+    
+        if response then
+            local data = game:GetService("HttpService"):JSONDecode(response)
+            local jobDetails = {}
+            if data and data.data and data.data.embeds then
+                for _, embed in pairs(data.data.embeds) do
+                    if embed.fields then
+                        local placeId, jobId
+                        for _, field in pairs(embed.fields) do
+                            if field.name == "Script Join" then
+                                placeId = field.value:match("TeleportToPlaceInstance%((%d+),")
+                            elseif field.name:find("Job ID") then
+                                jobId = field.value
+                            end
+                        end
+                        if placeId and jobId then
+                            table.insert(jobDetails, { placeId = placeId, jobId = jobId })
+                        end
+                    end
+                end
+            end
+            return jobDetails
+        end
+        return {}
+    end
+    
+    local function teleportToServer(jobDetails)
+        local maxRetries = 3 
+        local retryCount = 0
+    
+        while retryCount < maxRetries do
+            if #jobDetails > 0 then
+                local job = jobDetails[1] 
+                local placeId = tonumber(job.placeId)
+                local jobId = job.jobId
+    
+                if placeId and jobId then
+                    game.StarterGui:SetCore("SendNotification", {
+                        Title = "SPOTIFY HUB",
+                        Text = "Loading Join Kitsune Island",
+                        Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                        Duration = 1 
+                    })
+    
+                    task.wait(1.2) 
+                    local success, errorMsg = pcall(function()
+                        game:GetService("TeleportService"):TeleportToPlaceInstance(
+                            placeId,
+                            jobId,
+                            game:GetService("Players").LocalPlayer
+                        )
+                    end)
+    
+                    if success then
+                        return
+                    else
+                        retryCount = retryCount + 1
+                        game.StarterGui:SetCore("SendNotification", {
+                            Title = "SPOTIFY HUB",
+                            Text = "Retrying... Attempt: " .. retryCount,
+                            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                            Duration = 2.5
+                        })
+                    end
+                end
+            end
+    
+            if retryCount < maxRetries then
+                jobDetails = fetchJobDetails()
+            end
+    
+            task.wait(5) 
+        end
+    
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "SPOTIFY HUB",
+            Text = "All Attempts Failed. Waiting for next retry.",
+            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+            Duration = 2.5
+        })
+    end
+    
+    spawn(function()
+        while true do
+            if _G.HopServerKitsuneIsland then
+                local jobDetails = fetchJobDetails()
+                teleportToServer(jobDetails)
+            end
+            task.wait(10) 
+        end
+    end)
+
+    VisualX:AddToggle("Hop Server Frozen Dimension", _G.HopServerFrozenIsland, function(value)
+        _G.HopServerFrozenIsland = value
+    end)
+    
+    local function identifyExecutor()
+        local executor = identifyexecutor()
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "SPOTIFY HUB",
+            Text = "Executor : " .. executor,
+            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+            Duration = 1.5
+        })
+        return executor
+    end
+    
+    local function makeHttpRequest(url, executor)
+        local response
+        if executor == "Fluxus" then
+            response = fluxus.request({ Url = url, Method = "GET" })
+        elseif executor == "Synapse X" then
+            response = syn.request({ Url = url, Method = "GET" })
+        elseif executor == "Criptic" then
+            response = criptic.request({ Url = url, Method = "GET" })
+        elseif executor == "Arceus X Neo" then
+            response = arceus.request({ Url = url, Method = "GET" })
+        elseif executor == "Codex" then
+            response = codex.request({ Url = url, Method = "GET" })
+        elseif executor == "Trigon" then
+            response = trigon.request({ Url = url, Method = "GET" })
+        elseif executor == "Vega X" then
+            response = vegax.request({ Url = url, Method = "GET" })
+        elseif executor == "Solara" then
+            response = solara.request({ Url = url, Method = "GET" })
+        elseif executor == "Wave" then
+            response = wave.request({ Url = url, Method = "GET" })
+        elseif executor == "Kiwi X" then
+            response = kiwix.request({ Url = url, Method = "GET" })
+        elseif executor == "Delta" then
+            response = request({ Url = url, Method = "GET" })
+        elseif executor == "KRNL" then
+            response = http_request({ Url = url, Method = "GET" })
+        else
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "SPOTIFY HUB",
+                Text = "Executor Not Supported!",
+                Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                Duration = 1.5
+            })
+            return nil
+        end
+    
+        if response and response.Success then
+            return response.Body
+        else
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "SPOTIFY HUB",
+                Text = "Hop Server Error. Wait for retry.",
+                Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                Duration = 1.5
+            })
+            return nil
+        end
+    end
+    
+    local function fetchJobDetails()
+        local apiUrl = "https://medusastore.tech/api/check?info=FROZENISLAND"
+        local executor = identifyExecutor()
+        local response = makeHttpRequest(apiUrl, executor)
+    
+        if response then
+            local data = game:GetService("HttpService"):JSONDecode(response)
+            local jobDetails = {}
+            if data and data.data and data.data.embeds then
+                for _, embed in pairs(data.data.embeds) do
+                    if embed.fields then
+                        local placeId, jobId
+                        for _, field in pairs(embed.fields) do
+                            if field.name == "Script Join" then
+                                placeId = field.value:match("TeleportToPlaceInstance%((%d+),")
+                            elseif field.name:find("Job ID") then
+                                jobId = field.value
+                            end
+                        end
+                        if placeId and jobId then
+                            table.insert(jobDetails, { placeId = placeId, jobId = jobId })
+                        end
+                    end
+                end
+            end
+            return jobDetails
+        end
+        return {}
+    end
+    
+    local function teleportToServer(jobDetails)
+        local maxRetries = 3 
+        local retryCount = 0
+    
+        while retryCount < maxRetries do
+            if #jobDetails > 0 then
+                local job = jobDetails[1] 
+                local placeId = tonumber(job.placeId)
+                local jobId = job.jobId
+    
+                if placeId and jobId then
+                    game.StarterGui:SetCore("SendNotification", {
+                        Title = "SPOTIFY HUB",
+                        Text = "Loading Join Frozen Dimension",
+                        Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                        Duration = 1 
+                    })
+    
+                    task.wait(1.2) 
+                    local success, errorMsg = pcall(function()
+                        game:GetService("TeleportService"):TeleportToPlaceInstance(
+                            placeId,
+                            jobId,
+                            game:GetService("Players").LocalPlayer
+                        )
+                    end)
+    
+                    if success then
+                        return
+                    else
+                        retryCount = retryCount + 1
+                        game.StarterGui:SetCore("SendNotification", {
+                            Title = "SPOTIFY HUB",
+                            Text = "Retrying... Attempt: " .. retryCount,
+                            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                            Duration = 2.5
+                        })
+                    end
+                end
+            end
+    
+            if retryCount < maxRetries then
+                jobDetails = fetchJobDetails()
+            end
+    
+            task.wait(5) 
+        end
+    
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "SPOTIFY HUB",
+            Text = "All Attempts Failed. Waiting for next retry.",
+            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+            Duration = 2.5
+        })
+    end
+    
+    spawn(function()
+        while true do
+            if _G.HopServerFrozenIsland then
+                local jobDetails = fetchJobDetails()
+                teleportToServer(jobDetails)
+            end
+            task.wait(10) 
+        end
+    end)
+
+    VisualX:AddToggle("Hop Server Prehistoric Island", _G.HopServerPrehistoricIsland, function(value)
+        _G.HopServerPrehistoricIsland = value
+    end)
+    
+    local function identifyExecutor()
+        local executor = identifyexecutor()
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "SPOTIFY HUB",
+            Text = "Executor : " .. executor,
+            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+            Duration = 1.5
+        })
+        return executor
+    end
+    
+    local function makeHttpRequest(url, executor)
+        local response
+        if executor == "Fluxus" then
+            response = fluxus.request({ Url = url, Method = "GET" })
+        elseif executor == "Synapse X" then
+            response = syn.request({ Url = url, Method = "GET" })
+        elseif executor == "Criptic" then
+            response = criptic.request({ Url = url, Method = "GET" })
+        elseif executor == "Arceus X Neo" then
+            response = arceus.request({ Url = url, Method = "GET" })
+        elseif executor == "Codex" then
+            response = codex.request({ Url = url, Method = "GET" })
+        elseif executor == "Trigon" then
+            response = trigon.request({ Url = url, Method = "GET" })
+        elseif executor == "Vega X" then
+            response = vegax.request({ Url = url, Method = "GET" })
+        elseif executor == "Solara" then
+            response = solara.request({ Url = url, Method = "GET" })
+        elseif executor == "Wave" then
+            response = wave.request({ Url = url, Method = "GET" })
+        elseif executor == "Kiwi X" then
+            response = kiwix.request({ Url = url, Method = "GET" })
+        elseif executor == "Delta" then
+            response = request({ Url = url, Method = "GET" })
+        elseif executor == "KRNL" then
+            response = http_request({ Url = url, Method = "GET" })
+        else
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "SPOTIFY HUB",
+                Text = "Executor Not Supported!",
+                Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                Duration = 1.5
+            })
+            return nil
+        end
+    
+        if response and response.Success then
+            return response.Body
+        else
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "SPOTIFY HUB",
+                Text = "Hop Server Error. Wait for retry.",
+                Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                Duration = 1.5
+            })
+            return nil
+        end
+    end
+    
+    local function fetchJobDetails()
+        local apiUrl = "https://medusastore.tech/api/check?info=PREHISTORICISLAND"
+        local executor = identifyExecutor()
+        local response = makeHttpRequest(apiUrl, executor)
+    
+        if response then
+            local data = game:GetService("HttpService"):JSONDecode(response)
+            local jobDetails = {}
+            if data and data.data and data.data.embeds then
+                for _, embed in pairs(data.data.embeds) do
+                    if embed.fields then
+                        local placeId, jobId
+                        for _, field in pairs(embed.fields) do
+                            if field.name == "Script Join" then
+                                placeId = field.value:match("TeleportToPlaceInstance%((%d+),")
+                            elseif field.name:find("Job ID") then
+                                jobId = field.value
+                            end
+                        end
+                        if placeId and jobId then
+                            table.insert(jobDetails, { placeId = placeId, jobId = jobId })
+                        end
+                    end
+                end
+            end
+            return jobDetails
+        end
+        return {}
+    end
+    
+    local function teleportToServer(jobDetails)
+        local maxRetries = 3 
+        local retryCount = 0
+    
+        while retryCount < maxRetries do
+            if #jobDetails > 0 then
+                local job = jobDetails[1] 
+                local placeId = tonumber(job.placeId)
+                local jobId = job.jobId
+    
+                if placeId and jobId then
+                    game.StarterGui:SetCore("SendNotification", {
+                        Title = "SPOTIFY HUB",
+                        Text = "Loading Join Prehistoric Island",
+                        Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                        Duration = 1 
+                    })
+    
+                    task.wait(1.2) 
+                    local success, errorMsg = pcall(function()
+                        game:GetService("TeleportService"):TeleportToPlaceInstance(
+                            placeId,
+                            jobId,
+                            game:GetService("Players").LocalPlayer
+                        )
+                    end)
+    
+                    if success then
+                        return
+                    else
+                        retryCount = retryCount + 1
+                        game.StarterGui:SetCore("SendNotification", {
+                            Title = "SPOTIFY HUB",
+                            Text = "Retrying... Attempt: " .. retryCount,
+                            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                            Duration = 2.5
+                        })
+                    end
+                end
+            end
+    
+            if retryCount < maxRetries then
+                jobDetails = fetchJobDetails()
+            end
+    
+            task.wait(5) 
+        end
+    
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "SPOTIFY HUB",
+            Text = "All Attempts Failed. Waiting for next retry.",
+            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+            Duration = 2.5
+        })
+    end
+    
+    spawn(function()
+        while true do
+            if _G.HopServerPrehistoricIsland then
+                local jobDetails = fetchJobDetails()
+                teleportToServer(jobDetails)
+            end
+            task.wait(10) 
+        end
+    end)
+
+    VisualX:AddSeperator("Hop Server Get Items")
+
+    VisualX:AddToggle("Hop Server God's Chalice", _G.HopServerGodsChalice, function(value)
+        _G.HopServerGodsChalice = value
+    end)
+    
+    local function identifyExecutor()
+        local executor = identifyexecutor()
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "SPOTIFY HUB",
+            Text = "Executor : " .. executor,
+            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+            Duration = 1.5
+        })
+        return executor
+    end
+    
+    local function makeHttpRequest(url, executor)
+        local response
+        if executor == "Fluxus" then
+            response = fluxus.request({ Url = url, Method = "GET" })
+        elseif executor == "Synapse X" then
+            response = syn.request({ Url = url, Method = "GET" })
+        elseif executor == "Criptic" then
+            response = criptic.request({ Url = url, Method = "GET" })
+        elseif executor == "Arceus X Neo" then
+            response = arceus.request({ Url = url, Method = "GET" })
+        elseif executor == "Codex" then
+            response = codex.request({ Url = url, Method = "GET" })
+        elseif executor == "Trigon" then
+            response = trigon.request({ Url = url, Method = "GET" })
+        elseif executor == "Vega X" then
+            response = vegax.request({ Url = url, Method = "GET" })
+        elseif executor == "Solara" then
+            response = solara.request({ Url = url, Method = "GET" })
+        elseif executor == "Wave" then
+            response = wave.request({ Url = url, Method = "GET" })
+        elseif executor == "Kiwi X" then
+            response = kiwix.request({ Url = url, Method = "GET" })
+        elseif executor == "Delta" then
+            response = request({ Url = url, Method = "GET" })
+        elseif executor == "KRNL" then
+            response = http_request({ Url = url, Method = "GET" })
+        else
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "SPOTIFY HUB",
+                Text = "Executor Not Supported!",
+                Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                Duration = 1.5
+            })
+            return nil
+        end
+    
+        if response and response.Success then
+            return response.Body
+        else
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "SPOTIFY HUB",
+                Text = "Hop Server Error. Wait for retry.",
+                Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                Duration = 1.5
+            })
+            return nil
+        end
+    end
+    
+    local function fetchJobDetails()
+        local apiUrl = "https://medusastore.tech/api/check?info=GODCHALICE"
+        local executor = identifyExecutor()
+        local response = makeHttpRequest(apiUrl, executor)
+    
+        if response then
+            local data = game:GetService("HttpService"):JSONDecode(response)
+            local jobDetails = {}
+            if data and data.data and data.data.embeds then
+                for _, embed in pairs(data.data.embeds) do
+                    if embed.fields then
+                        local placeId, jobId
+                        for _, field in pairs(embed.fields) do
+                            if field.name == "Script Join" then
+                                placeId = field.value:match("TeleportToPlaceInstance%((%d+),")
+                            elseif field.name:find("Job ID") then
+                                jobId = field.value
+                            end
+                        end
+                        if placeId and jobId then
+                            table.insert(jobDetails, { placeId = placeId, jobId = jobId })
+                        end
+                    end
+                end
+            end
+            return jobDetails
+        end
+        return {}
+    end
+    
+    local function teleportToServer(jobDetails)
+        local maxRetries = 3 
+        local retryCount = 0
+    
+        while retryCount < maxRetries do
+            if #jobDetails > 0 then
+                local job = jobDetails[1] 
+                local placeId = tonumber(job.placeId)
+                local jobId = job.jobId
+    
+                if placeId and jobId then
+                    game.StarterGui:SetCore("SendNotification", {
+                        Title = "SPOTIFY HUB",
+                        Text = "Loading Join God's Chalice",
+                        Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                        Duration = 1 
+                    })
+    
+                    task.wait(1.2) 
+                    local success, errorMsg = pcall(function()
+                        game:GetService("TeleportService"):TeleportToPlaceInstance(
+                            placeId,
+                            jobId,
+                            game:GetService("Players").LocalPlayer
+                        )
+                    end)
+    
+                    if success then
+                        return
+                    else
+                        retryCount = retryCount + 1
+                        game.StarterGui:SetCore("SendNotification", {
+                            Title = "SPOTIFY HUB",
+                            Text = "Retrying... Attempt: " .. retryCount,
+                            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                            Duration = 2.5
+                        })
+                    end
+                end
+            end
+    
+            if retryCount < maxRetries then
+                jobDetails = fetchJobDetails()
+            end
+    
+            task.wait(5) 
+        end
+    
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "SPOTIFY HUB",
+            Text = "All Attempts Failed. Waiting for next retry.",
+            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+            Duration = 2.5
+        })
+    end
+    
+    spawn(function()
+        while true do
+            if _G.HopServerGodsChalice then
+                local jobDetails = fetchJobDetails()
+                teleportToServer(jobDetails)
+            end
+            task.wait(10) 
+        end
+    end)
+
+    VisualX:AddToggle("Hop Server Legendary Sword", _G.HopServerLegendarySword, function(value)
+        _G.HopServerLegendarySword = value
+    end)
+    
+    local function identifyExecutor()
+        local executor = identifyexecutor()
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "SPOTIFY HUB",
+            Text = "Executor : " .. executor,
+            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+            Duration = 1.5
+        })
+        return executor
+    end
+    
+    local function makeHttpRequest(url, executor)
+        local response
+        if executor == "Fluxus" then
+            response = fluxus.request({ Url = url, Method = "GET" })
+        elseif executor == "Synapse X" then
+            response = syn.request({ Url = url, Method = "GET" })
+        elseif executor == "Criptic" then
+            response = criptic.request({ Url = url, Method = "GET" })
+        elseif executor == "Arceus X Neo" then
+            response = arceus.request({ Url = url, Method = "GET" })
+        elseif executor == "Codex" then
+            response = codex.request({ Url = url, Method = "GET" })
+        elseif executor == "Trigon" then
+            response = trigon.request({ Url = url, Method = "GET" })
+        elseif executor == "Vega X" then
+            response = vegax.request({ Url = url, Method = "GET" })
+        elseif executor == "Solara" then
+            response = solara.request({ Url = url, Method = "GET" })
+        elseif executor == "Wave" then
+            response = wave.request({ Url = url, Method = "GET" })
+        elseif executor == "Kiwi X" then
+            response = kiwix.request({ Url = url, Method = "GET" })
+        elseif executor == "Delta" then
+            response = request({ Url = url, Method = "GET" })
+        elseif executor == "KRNL" then
+            response = http_request({ Url = url, Method = "GET" })
+        else
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "SPOTIFY HUB",
+                Text = "Executor Not Supported!",
+                Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                Duration = 1.5
+            })
+            return nil
+        end
+    
+        if response and response.Success then
+            return response.Body
+        else
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "SPOTIFY HUB",
+                Text = "Hop Server Error. Wait for retry.",
+                Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                Duration = 1.5
+            })
+            return nil
+        end
+    end
+    
+    local function fetchJobDetails()
+        local apiUrl = "https://medusastore.tech/api/webhook?info=LEGENDARYSWORD"
+        local executor = identifyExecutor()
+        local response = makeHttpRequest(apiUrl, executor)
+    
+        if response then
+            local data = game:GetService("HttpService"):JSONDecode(response)
+            local jobDetails = {}
+            if data and data.data and data.data.embeds then
+                for _, embed in pairs(data.data.embeds) do
+                    if embed.fields then
+                        local placeId, jobId
+                        for _, field in pairs(embed.fields) do
+                            if field.name == "Script Join" then
+                                placeId = field.value:match("TeleportToPlaceInstance%((%d+),")
+                            elseif field.name:find("Job ID") then
+                                jobId = field.value
+                            end
+                        end
+                        if placeId and jobId then
+                            table.insert(jobDetails, { placeId = placeId, jobId = jobId })
+                        end
+                    end
+                end
+            end
+            return jobDetails
+        end
+        return {}
+    end
+    
+    local function teleportToServer(jobDetails)
+        local maxRetries = 3 
+        local retryCount = 0
+    
+        while retryCount < maxRetries do
+            if #jobDetails > 0 then
+                local job = jobDetails[1] 
+                local placeId = tonumber(job.placeId)
+                local jobId = job.jobId
+    
+                if placeId and jobId then
+                    game.StarterGui:SetCore("SendNotification", {
+                        Title = "SPOTIFY HUB",
+                        Text = "Loading Join Legendary Sword",
+                        Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                        Duration = 1 
+                    })
+    
+                    task.wait(1.2) 
+                    local success, errorMsg = pcall(function()
+                        game:GetService("TeleportService"):TeleportToPlaceInstance(
+                            placeId,
+                            jobId,
+                            game:GetService("Players").LocalPlayer
+                        )
+                    end)
+    
+                    if success then
+                        return
+                    else
+                        retryCount = retryCount + 1
+                        game.StarterGui:SetCore("SendNotification", {
+                            Title = "SPOTIFY HUB",
+                            Text = "Retrying... Attempt: " .. retryCount,
+                            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                            Duration = 2.5
+                        })
+                    end
+                end
+            end
+    
+            if retryCount < maxRetries then
+                jobDetails = fetchJobDetails()
+            end
+    
+            task.wait(5) 
+        end
+    
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "SPOTIFY HUB",
+            Text = "All Attempts Failed. Waiting for next retry.",
+            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+            Duration = 2.5
+        })
+    end
+    
+    spawn(function()
+        while true do
+            if _G.HopServerLegendarySword then
+                local jobDetails = fetchJobDetails()
+                teleportToServer(jobDetails)
+            end
+            task.wait(10) 
+        end
+    end)
+
+    VisualX:AddSeperator("Hop Low Server")
+
+    VisualX:AddToggle("Hop Low Server", _G.HopServerLowServer, function(value)
+        _G.HopServerLowServer = value
+    end)
+    
+    local function identifyExecutor()
+        local executor = identifyexecutor()
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "SPOTIFY HUB",
+            Text = "Executor : " .. executor,
+            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+            Duration = 1.5
+        })
+        return executor
+    end
+    
+    local function makeHttpRequest(url, executor)
+        local response
+        if executor == "Fluxus" then
+            response = fluxus.request({ Url = url, Method = "GET" })
+        elseif executor == "Synapse X" then
+            response = syn.request({ Url = url, Method = "GET" })
+        elseif executor == "Criptic" then
+            response = criptic.request({ Url = url, Method = "GET" })
+        elseif executor == "Arceus X Neo" then
+            response = arceus.request({ Url = url, Method = "GET" })
+        elseif executor == "Codex" then
+            response = codex.request({ Url = url, Method = "GET" })
+        elseif executor == "Trigon" then
+            response = trigon.request({ Url = url, Method = "GET" })
+        elseif executor == "Vega X" then
+            response = vegax.request({ Url = url, Method = "GET" })
+        elseif executor == "Solara" then
+            response = solara.request({ Url = url, Method = "GET" })
+        elseif executor == "Wave" then
+            response = wave.request({ Url = url, Method = "GET" })
+        elseif executor == "Kiwi X" then
+            response = kiwix.request({ Url = url, Method = "GET" })
+        elseif executor == "Delta" then
+            response = request({ Url = url, Method = "GET" })
+        elseif executor == "KRNL" then
+            response = http_request({ Url = url, Method = "GET" })
+        else
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "SPOTIFY HUB",
+                Text = "Executor Not Supported!",
+                Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                Duration = 1.5
+            })
+            return nil
+        end
+    
+        if response and response.Success then
+            return response.Body
+        else
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "SPOTIFY HUB",
+                Text = "Hop Server Error. Wait for retry.",
+                Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                Duration = 1.5
+            })
+            return nil
+        end
+    end
+    
+    local function fetchJobDetails()
+        local apiUrl = "https://medusastore.tech/api/check?info=LOWSERVER"
+        local executor = identifyExecutor()
+        local response = makeHttpRequest(apiUrl, executor)
+    
+        if response then
+            local data = game:GetService("HttpService"):JSONDecode(response)
+            local jobDetails = {}
+            if data and data.data and data.data.embeds then
+                for _, embed in pairs(data.data.embeds) do
+                    if embed.fields then
+                        local placeId, jobId
+                        for _, field in pairs(embed.fields) do
+                            if field.name == "Script Join" then
+                                placeId = field.value:match("TeleportToPlaceInstance%((%d+),")
+                            elseif field.name:find("Job ID") then
+                                jobId = field.value
+                            end
+                        end
+                        if placeId and jobId then
+                            table.insert(jobDetails, { placeId = placeId, jobId = jobId })
+                        end
+                    end
+                end
+            end
+            return jobDetails
+        end
+        return {}
+    end
+    
+    local function teleportToServer(jobDetails)
+        local maxRetries = 3 
+        local retryCount = 0
+    
+        while retryCount < maxRetries do
+            if #jobDetails > 0 then
+                local job = jobDetails[1] 
+                local placeId = tonumber(job.placeId)
+                local jobId = job.jobId
+    
+                if placeId and jobId then
+                    game.StarterGui:SetCore("SendNotification", {
+                        Title = "SPOTIFY HUB",
+                        Text = "Loading Join Low Server",
+                        Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                        Duration = 1 
+                    })
+    
+                    task.wait(1.2) 
+                    local success, errorMsg = pcall(function()
+                        game:GetService("TeleportService"):TeleportToPlaceInstance(
+                            placeId,
+                            jobId,
+                            game:GetService("Players").LocalPlayer
+                        )
+                    end)
+    
+                    if success then
+                        return
+                    else
+                        retryCount = retryCount + 1
+                        game.StarterGui:SetCore("SendNotification", {
+                            Title = "SPOTIFY HUB",
+                            Text = "Retrying... Attempt: " .. retryCount,
+                            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                            Duration = 2.5
+                        })
+                    end
+                end
+            end
+    
+            if retryCount < maxRetries then
+                jobDetails = fetchJobDetails()
+            end
+    
+            task.wait(5) 
+        end
+    
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "SPOTIFY HUB",
+            Text = "All Attempts Failed. Waiting for next retry.",
+            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+            Duration = 2.5
+        })
+    end
+    
+    spawn(function()
+        while true do
+            if _G.HopServerLowServer then
+                local jobDetails = fetchJobDetails()
+                teleportToServer(jobDetails)
+            end
+            task.wait(10) 
+        end
+    end)
+
+    VisualX:AddSeperator("Hop Server Boss")
+
+    VisualX:AddToggle("Hop Server Cake Prince", _G.HopServerCPrince, function(value)
+        _G.HopServerCPrince = value
+    end)
+    
+    local function identifyExecutor()
+        local executor = identifyexecutor()
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "SPOTIFY HUB",
+            Text = "Executor : " .. executor,
+            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+            Duration = 1.5
+        })
+        return executor
+    end
+    
+    local function makeHttpRequest(url, executor)
+        local response
+        if executor == "Fluxus" then
+            response = fluxus.request({ Url = url, Method = "GET" })
+        elseif executor == "Synapse X" then
+            response = syn.request({ Url = url, Method = "GET" })
+        elseif executor == "Criptic" then
+            response = criptic.request({ Url = url, Method = "GET" })
+        elseif executor == "Arceus X Neo" then
+            response = arceus.request({ Url = url, Method = "GET" })
+        elseif executor == "Codex" then
+            response = codex.request({ Url = url, Method = "GET" })
+        elseif executor == "Trigon" then
+            response = trigon.request({ Url = url, Method = "GET" })
+        elseif executor == "Vega X" then
+            response = vegax.request({ Url = url, Method = "GET" })
+        elseif executor == "Solara" then
+            response = solara.request({ Url = url, Method = "GET" })
+        elseif executor == "Wave" then
+            response = wave.request({ Url = url, Method = "GET" })
+        elseif executor == "Kiwi X" then
+            response = kiwix.request({ Url = url, Method = "GET" })
+        elseif executor == "Delta" then
+            response = request({ Url = url, Method = "GET" })
+        elseif executor == "KRNL" then
+            response = http_request({ Url = url, Method = "GET" })
+        else
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "SPOTIFY HUB",
+                Text = "Executor Not Supported!",
+                Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                Duration = 1.5
+            })
+            return nil
+        end
+    
+        if response and response.Success then
+            return response.Body
+        else
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "SPOTIFY HUB",
+                Text = "Hop Server Error. Wait for retry.",
+                Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                Duration = 1.5
+            })
+            return nil
+        end
+    end
+    
+    local function fetchJobDetails()
+        local apiUrl = "https://medusastore.tech/api/check?info=GODCHALICE"
+        local executor = identifyExecutor()
+        local response = makeHttpRequest(apiUrl, executor)
+    
+        if response then
+            local data = game:GetService("HttpService"):JSONDecode(response)
+            local jobDetails = {}
+            if data and data.data and data.data.embeds then
+                for _, embed in pairs(data.data.embeds) do
+                    if embed.fields then
+                        local placeId, jobId
+                        for _, field in pairs(embed.fields) do
+                            if field.name == "Script Join" then
+                                placeId = field.value:match("TeleportToPlaceInstance%((%d+),")
+                            elseif field.name:find("Job ID") then
+                                jobId = field.value
+                            end
+                        end
+                        if placeId and jobId then
+                            table.insert(jobDetails, { placeId = placeId, jobId = jobId })
+                        end
+                    end
+                end
+            end
+            return jobDetails
+        end
+        return {}
+    end
+    
+    local function teleportToServer(jobDetails)
+        local maxRetries = 3 
+        local retryCount = 0
+    
+        while retryCount < maxRetries do
+            if #jobDetails > 0 then
+                local job = jobDetails[1] 
+                local placeId = tonumber(job.placeId)
+                local jobId = job.jobId
+    
+                if placeId and jobId then
+                    game.StarterGui:SetCore("SendNotification", {
+                        Title = "SPOTIFY HUB",
+                        Text = "Loading Join God's Chalice",
+                        Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                        Duration = 1 
+                    })
+    
+                    task.wait(1.2) 
+                    local success, errorMsg = pcall(function()
+                        game:GetService("TeleportService"):TeleportToPlaceInstance(
+                            placeId,
+                            jobId,
+                            game:GetService("Players").LocalPlayer
+                        )
+                    end)
+    
+                    if success then
+                        return
+                    else
+                        retryCount = retryCount + 1
+                        game.StarterGui:SetCore("SendNotification", {
+                            Title = "SPOTIFY HUB",
+                            Text = "Retrying... Attempt: " .. retryCount,
+                            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                            Duration = 2.5
+                        })
+                    end
+                end
+            end
+    
+            if retryCount < maxRetries then
+                jobDetails = fetchJobDetails()
+            end
+    
+            task.wait(5) 
+        end
+    
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "SPOTIFY HUB",
+            Text = "All Attempts Failed. Waiting for next retry.",
+            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+            Duration = 2.5
+        })
+    end
+    
+    spawn(function()
+        while true do
+            if _G.HopServerGodsChalice then
+                local jobDetails = fetchJobDetails()
+                teleportToServer(jobDetails)
+            end
+            task.wait(10) 
+        end
+    end)
+
+    VisualX:AddToggle("Hop Server Dough King", _G.HopServerDoughKing, function(value)
+        _G.HopServerDoughKing = value
+    end)
+    
+    local function identifyExecutor()
+        local executor = identifyexecutor()
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "SPOTIFY HUB",
+            Text = "Executor : " .. executor,
+            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+            Duration = 1.5
+        })
+        return executor
+    end
+    
+    local function makeHttpRequest(url, executor)
+        local response
+        if executor == "Fluxus" then
+            response = fluxus.request({ Url = url, Method = "GET" })
+        elseif executor == "Synapse X" then
+            response = syn.request({ Url = url, Method = "GET" })
+        elseif executor == "Criptic" then
+            response = criptic.request({ Url = url, Method = "GET" })
+        elseif executor == "Arceus X Neo" then
+            response = arceus.request({ Url = url, Method = "GET" })
+        elseif executor == "Codex" then
+            response = codex.request({ Url = url, Method = "GET" })
+        elseif executor == "Trigon" then
+            response = trigon.request({ Url = url, Method = "GET" })
+        elseif executor == "Vega X" then
+            response = vegax.request({ Url = url, Method = "GET" })
+        elseif executor == "Solara" then
+            response = solara.request({ Url = url, Method = "GET" })
+        elseif executor == "Wave" then
+            response = wave.request({ Url = url, Method = "GET" })
+        elseif executor == "Kiwi X" then
+            response = kiwix.request({ Url = url, Method = "GET" })
+        elseif executor == "Delta" then
+            response = request({ Url = url, Method = "GET" })
+        elseif executor == "KRNL" then
+            response = http_request({ Url = url, Method = "GET" })
+        else
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "SPOTIFY HUB",
+                Text = "Executor Not Supported!",
+                Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                Duration = 1.5
+            })
+            return nil
+        end
+    
+        if response and response.Success then
+            return response.Body
+        else
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "SPOTIFY HUB",
+                Text = "Hop Server Error. Wait for retry.",
+                Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                Duration = 1.5
+            })
+            return nil
+        end
+    end
+    
+    local function fetchJobDetails()
+        local apiUrl = "https://medusastore.tech/api/check?info=DOUGHKING"
+        local executor = identifyExecutor()
+        local response = makeHttpRequest(apiUrl, executor)
+    
+        if response then
+            local data = game:GetService("HttpService"):JSONDecode(response)
+            local jobDetails = {}
+            if data and data.data and data.data.embeds then
+                for _, embed in pairs(data.data.embeds) do
+                    if embed.fields then
+                        local placeId, jobId
+                        for _, field in pairs(embed.fields) do
+                            if field.name == "Script Join" then
+                                placeId = field.value:match("TeleportToPlaceInstance%((%d+),")
+                            elseif field.name:find("Job ID") then
+                                jobId = field.value
+                            end
+                        end
+                        if placeId and jobId then
+                            table.insert(jobDetails, { placeId = placeId, jobId = jobId })
+                        end
+                    end
+                end
+            end
+            return jobDetails
+        end
+        return {}
+    end
+    
+    local function teleportToServer(jobDetails)
+        local maxRetries = 3 
+        local retryCount = 0
+    
+        while retryCount < maxRetries do
+            if #jobDetails > 0 then
+                local job = jobDetails[1] 
+                local placeId = tonumber(job.placeId)
+                local jobId = job.jobId
+    
+                if placeId and jobId then
+                    game.StarterGui:SetCore("SendNotification", {
+                        Title = "SPOTIFY HUB",
+                        Text = "Loading Join Dough King",
+                        Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                        Duration = 1 
+                    })
+    
+                    task.wait(1.2) 
+                    local success, errorMsg = pcall(function()
+                        game:GetService("TeleportService"):TeleportToPlaceInstance(
+                            placeId,
+                            jobId,
+                            game:GetService("Players").LocalPlayer
+                        )
+                    end)
+    
+                    if success then
+                        return
+                    else
+                        retryCount = retryCount + 1
+                        game.StarterGui:SetCore("SendNotification", {
+                            Title = "SPOTIFY HUB",
+                            Text = "Retrying... Attempt: " .. retryCount,
+                            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                            Duration = 2.5
+                        })
+                    end
+                end
+            end
+    
+            if retryCount < maxRetries then
+                jobDetails = fetchJobDetails()
+            end
+    
+            task.wait(5) 
+        end
+    
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "SPOTIFY HUB",
+            Text = "All Attempts Failed. Waiting for next retry.",
+            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+            Duration = 2.5
+        })
+    end
+    
+    spawn(function()
+        while true do
+            if _G.HopServerDoughKing then
+                local jobDetails = fetchJobDetails()
+                teleportToServer(jobDetails)
+            end
+            task.wait(10) 
+        end
+    end)
+
+    VisualX:AddToggle("Hop Server Elite Hunter", _G.HopServerEliteHunter, function(value)
+        _G.HopServerEliteHunter = value
+    end)
+    
+    local function identifyExecutor()
+        local executor = identifyexecutor()
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "SPOTIFY HUB",
+            Text = "Executor : " .. executor,
+            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+            Duration = 1.5
+        })
+        return executor
+    end
+    
+    local function makeHttpRequest(url, executor)
+        local response
+        if executor == "Fluxus" then
+            response = fluxus.request({ Url = url, Method = "GET" })
+        elseif executor == "Synapse X" then
+            response = syn.request({ Url = url, Method = "GET" })
+        elseif executor == "Criptic" then
+            response = criptic.request({ Url = url, Method = "GET" })
+        elseif executor == "Arceus X Neo" then
+            response = arceus.request({ Url = url, Method = "GET" })
+        elseif executor == "Codex" then
+            response = codex.request({ Url = url, Method = "GET" })
+        elseif executor == "Trigon" then
+            response = trigon.request({ Url = url, Method = "GET" })
+        elseif executor == "Vega X" then
+            response = vegax.request({ Url = url, Method = "GET" })
+        elseif executor == "Solara" then
+            response = solara.request({ Url = url, Method = "GET" })
+        elseif executor == "Wave" then
+            response = wave.request({ Url = url, Method = "GET" })
+        elseif executor == "Kiwi X" then
+            response = kiwix.request({ Url = url, Method = "GET" })
+        elseif executor == "Delta" then
+            response = request({ Url = url, Method = "GET" })
+        elseif executor == "KRNL" then
+            response = http_request({ Url = url, Method = "GET" })
+        else
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "SPOTIFY HUB",
+                Text = "Executor Not Supported!",
+                Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                Duration = 1.5
+            })
+            return nil
+        end
+    
+        if response and response.Success then
+            return response.Body
+        else
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "SPOTIFY HUB",
+                Text = "Hop Server Error. Wait for retry.",
+                Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                Duration = 1.5
+            })
+            return nil
+        end
+    end
+    
+    local function fetchJobDetails()
+        local apiUrl = "https://medusastore.tech/api/check?info=ELITEHUNTER"
+        local executor = identifyExecutor()
+        local response = makeHttpRequest(apiUrl, executor)
+    
+        if response then
+            local data = game:GetService("HttpService"):JSONDecode(response)
+            local jobDetails = {}
+            if data and data.data and data.data.embeds then
+                for _, embed in pairs(data.data.embeds) do
+                    if embed.fields then
+                        local placeId, jobId
+                        for _, field in pairs(embed.fields) do
+                            if field.name == "Script Join" then
+                                placeId = field.value:match("TeleportToPlaceInstance%((%d+),")
+                            elseif field.name:find("Job ID") then
+                                jobId = field.value
+                            end
+                        end
+                        if placeId and jobId then
+                            table.insert(jobDetails, { placeId = placeId, jobId = jobId })
+                        end
+                    end
+                end
+            end
+            return jobDetails
+        end
+        return {}
+    end
+    
+    local function teleportToServer(jobDetails)
+        local maxRetries = 3 
+        local retryCount = 0
+    
+        while retryCount < maxRetries do
+            if #jobDetails > 0 then
+                local job = jobDetails[1] 
+                local placeId = tonumber(job.placeId)
+                local jobId = job.jobId
+    
+                if placeId and jobId then
+                    game.StarterGui:SetCore("SendNotification", {
+                        Title = "SPOTIFY HUB",
+                        Text = "Loading Join Elite Hunter",
+                        Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                        Duration = 1 
+                    })
+    
+                    task.wait(1.2) 
+                    local success, errorMsg = pcall(function()
+                        game:GetService("TeleportService"):TeleportToPlaceInstance(
+                            placeId,
+                            jobId,
+                            game:GetService("Players").LocalPlayer
+                        )
+                    end)
+    
+                    if success then
+                        return
+                    else
+                        retryCount = retryCount + 1
+                        game.StarterGui:SetCore("SendNotification", {
+                            Title = "SPOTIFY HUB",
+                            Text = "Retrying... Attempt: " .. retryCount,
+                            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                            Duration = 2.5
+                        })
+                    end
+                end
+            end
+    
+            if retryCount < maxRetries then
+                jobDetails = fetchJobDetails()
+            end
+    
+            task.wait(5) 
+        end
+    
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "SPOTIFY HUB",
+            Text = "All Attempts Failed. Waiting for next retry.",
+            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+            Duration = 2.5
+        })
+    end
+    
+    spawn(function()
+        while true do
+            if _G.HopServerEliteHunter then
+                local jobDetails = fetchJobDetails()
+                teleportToServer(jobDetails)
+            end
+            task.wait(10) 
+        end
+    end)
+    
+
+    VisualX:AddToggle("Hop Server Rip Indra", _G.HopServerRipIndra, function(value)
+        _G.HopServerRipIndra = value
+    end)
+    
+    local function identifyExecutor()
+        local executor = identifyexecutor()
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "SPOTIFY HUB",
+            Text = "Executor : " .. executor,
+            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+            Duration = 1.5
+        })
+        return executor
+    end
+    
+    local function makeHttpRequest(url, executor)
+        local response
+        if executor == "Fluxus" then
+            response = fluxus.request({ Url = url, Method = "GET" })
+        elseif executor == "Synapse X" then
+            response = syn.request({ Url = url, Method = "GET" })
+        elseif executor == "Criptic" then
+            response = criptic.request({ Url = url, Method = "GET" })
+        elseif executor == "Arceus X Neo" then
+            response = arceus.request({ Url = url, Method = "GET" })
+        elseif executor == "Codex" then
+            response = codex.request({ Url = url, Method = "GET" })
+        elseif executor == "Trigon" then
+            response = trigon.request({ Url = url, Method = "GET" })
+        elseif executor == "Vega X" then
+            response = vegax.request({ Url = url, Method = "GET" })
+        elseif executor == "Solara" then
+            response = solara.request({ Url = url, Method = "GET" })
+        elseif executor == "Wave" then
+            response = wave.request({ Url = url, Method = "GET" })
+        elseif executor == "Kiwi X" then
+            response = kiwix.request({ Url = url, Method = "GET" })
+        elseif executor == "Delta" then
+            response = request({ Url = url, Method = "GET" })
+        elseif executor == "KRNL" then
+            response = http_request({ Url = url, Method = "GET" })
+        else
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "SPOTIFY HUB",
+                Text = "Executor Not Supported!",
+                Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                Duration = 1.5
+            })
+            return nil
+        end
+    
+        if response and response.Success then
+            return response.Body
+        else
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "SPOTIFY HUB",
+                Text = "Hop Server Error. Wait for retry.",
+                Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                Duration = 1.5
+            })
+            return nil
+        end
+    end
+    
+    local function fetchJobDetails()
+        local apiUrl = "https://medusastore.tech/api/check?info=RIPINDRA"
+        local executor = identifyExecutor()
+        local response = makeHttpRequest(apiUrl, executor)
+    
+        if response then
+            local data = game:GetService("HttpService"):JSONDecode(response)
+            local jobDetails = {}
+            if data and data.data and data.data.embeds then
+                for _, embed in pairs(data.data.embeds) do
+                    if embed.fields then
+                        local placeId, jobId
+                        for _, field in pairs(embed.fields) do
+                            if field.name == "Script Join" then
+                                placeId = field.value:match("TeleportToPlaceInstance%((%d+),")
+                            elseif field.name:find("Job ID") then
+                                jobId = field.value
+                            end
+                        end
+                        if placeId and jobId then
+                            table.insert(jobDetails, { placeId = placeId, jobId = jobId })
+                        end
+                    end
+                end
+            end
+            return jobDetails
+        end
+        return {}
+    end
+    
+    local function teleportToServer(jobDetails)
+        local maxRetries = 3 
+        local retryCount = 0
+    
+        while retryCount < maxRetries do
+            if #jobDetails > 0 then
+                local job = jobDetails[1] 
+                local placeId = tonumber(job.placeId)
+                local jobId = job.jobId
+    
+                if placeId and jobId then
+                    game.StarterGui:SetCore("SendNotification", {
+                        Title = "SPOTIFY HUB",
+                        Text = "Loading Join Rip Indra",
+                        Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                        Duration = 1 
+                    })
+    
+                    task.wait(1.2) 
+                    local success, errorMsg = pcall(function()
+                        game:GetService("TeleportService"):TeleportToPlaceInstance(
+                            placeId,
+                            jobId,
+                            game:GetService("Players").LocalPlayer
+                        )
+                    end)
+    
+                    if success then
+                        return
+                    else
+                        retryCount = retryCount + 1
+                        game.StarterGui:SetCore("SendNotification", {
+                            Title = "SPOTIFY HUB",
+                            Text = "Retrying... Attempt: " .. retryCount,
+                            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                            Duration = 2.5
+                        })
+                    end
+                end
+            end
+    
+            if retryCount < maxRetries then
+                jobDetails = fetchJobDetails()
+            end
+    
+            task.wait(5) 
+        end
+    
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "SPOTIFY HUB",
+            Text = "All Attempts Failed. Waiting for next retry.",
+            Icon = "http://www.roblox.com/asset/?id=80725673395393",
+            Duration = 2.5
+        })
+    end
+    
+    spawn(function()
+        while true do
+            if _G.HopServerRipIndra then
+                local jobDetails = fetchJobDetails()
+                teleportToServer(jobDetails)
+            end
+            task.wait(10) 
+        end
+    end)
+    
+--[[
+    VisualX:AddToggle("Hop Kitsune Island (beta)", _G.HopServer3, function(value)
+        _G.HopServer3 = value
+    end)
+    
+    spawn(function()
+        while task.wait() do
+            if _G.HopServer3 then
+                local success, module = pcall(function()
+                    return loadstring(game:HttpGet("https://37utf92gn8cmz.ahost.marscode.site/as/xdf3/rtx/h0p;/kitsun.lua"))()
+                end)
+
+                if success and module and typeof(module.Teleport) == "function" then
+                    module:Teleport(game.JobId)
+                else
+                    --warn("Nothing")
+                end
+            end
+        end
+    end)
+
+    VisualX:AddToggle("Hop Low Server", _G.HopFindRipIndra, function(value)
+    _G.HopFindRipIndra = value
+end)
+
+spawn(function()
+    while wait(1) do
+        if _G.HopFindRipIndra then
+            if IsRipIndraSpawned() then
+                local ripIndraModel = game:GetService("Workspace").Enemies:FindFirstChild("rip_indra True Form") or
+                                     game:GetService("Workspace").Enemies:FindFirstChild("rip_indra [Lv. 5000] [Raid Boss]")
+                if ripIndraModel and 
+                   (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - ripIndraModel.HumanoidRootPart.Position).Magnitude > 300 then
+                    topos(ripIndraModel.HumanoidRootPart.CFrame * CFrame.new(0, 20, 0))
+                end
+            else
+                TeleportToPublicServer()
+                wait(5)
+            end
+        end
+    end
+end)
+
+VisualX:AddToggle("Hop Server Mirage (semi work)",_G.Hopfinddao,function(value)
+        _G.Hopfinddao = value
+       end)
+        spawn(function()
+            while wait() do
+            if _G.Hopfinddao then
+                if game:GetService("Workspace").Map:FindFirstChild("MysticIsland") or game:GetService("Workspace").Map:FindFirstChild("MysticIsland") then
+                    if HighestPointRealCFrame and (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - HighestPointRealCFrame.Position).Magnitude > 10 then
+                    topos(getHighestPoint().CFrame * CFrame.new(0, 211.88, 0))
+                        end
+                elseif not game:GetService("Workspace").Map:FindFirstChild("MysticIsland") or not game:GetService("Workspace").Map:FindFirstChild("MysticIsland") then
+                    Hop()
+                    end
+                end
+            end
+        end)
+        VisualX:AddToggle("Hop Server Full Moon (semi work)",_G.AutoFindFullmoon,function(value)
+            _G.AutoFindFullmoon = value    
+            end)
+            
+            spawn(function()
+                 while wait() do
+                     if _G.AutoFindFullmoon then
+                     if game:GetService("Lighting").Sky.MoonTextureId=="http://www.roblox.com/asset/?id=9709149052" or game:GetService("Lighting").Sky.MoonTextureId=="http://www.roblox.com/asset/?id=9709149052" then
+                         wait(2.0)
+                         game.StarterGui:SetCore("SendNotification", {
+                             Title = "SPOTIFY HUB", 
+                             Text = "You Server Full Moon" ,
+                             Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                             Duration = 2.5
+                         })
+                     elseif game:GetService("Lighting").Sky.MoonTextureId=="http://www.roblox.com/asset/?id=9709149052" then
+                         Hop()
+                         game.StarterGui:SetCore("SendNotification", {
+                             Title = "SPOTIFY HUB", 
+                             Text = "Wait New Server" ,
+                             Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                             Duration = 2.5
+                         })
+                     elseif game:GetService("Lighting").Sky.MoonTextureId=="http://www.roblox.com/asset/?id=9709149052" then
+                         Hop()
+                         game.StarterGui:SetCore("SendNotification", {
+                             Title = "SPOTIFY HUB", 
+                             Text = "Wait New Server" ,
+                             Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                             Duration = 2.5
+                         })
+                     elseif game:GetService("Lighting").Sky.MoonTextureId=="http://www.roblox.com/asset/?id=9709149052" then
+                         Hop()
+                         game.StarterGui:SetCore("SendNotification", {
+                             Title = "SPOTIFY HUB", 
+                             Text = "Wait New Server" ,
+                             Icon = "http://www.roblox.com/asset/?id=80725673395393",
+                             Duration = 2.5
+                         })
+                     else
+                         Hop()
+                         end
+                     end
+                 end
+             end)
+VisualX:AddToggle("Farm Dough King Hop", _G.AutodoughkingHop,function(value)
+        _G.AutodoughkingHop = value
+    end)
+    spawn(function()
+        while wait() do
+         if  _G.Autodoughking and World3 then
+                pcall(function()
+                    if game:GetService("Workspace").Enemies:FindFirstChild("Dough King") then
+                               for i,v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+                                   if v.Name == "Dough King" then
+                                       if v:FindFirstChild("Humanoid") and v:FindFirstChild("HumanoidRootPart") and v.Humanoid.Health > 0 then
+                                           repeat task.wait()
+                                               AutoHaki()
+                                               EquipWeapon(_G.SelectWeapon)
+                                               v.HumanoidRootPart.CanCollide = false
+                                               v.Humanoid.WalkSpeed = 2
+                                               v.HumanoidRootPart.Size = Vector3.new(50,50,50)
+                                               HyperCahaya(v.HumanoidRootPart.CFrame * CFrame.new(PosX,PosY,PosZ))
+                                               game:GetService("VirtualUser"):CaptureController()
+                                               game:GetService("VirtualUser"):Button1Down(Vector2.new(1280,672))
+                                               sethiddenproperty(game.Players.LocalPlayer,"SimulationRadius",math.huge)
+                                           until not  _G.Autodoughking or not v.Parent or v.Humanoid.Health <= 0
+                                       end
+                                   end
+                               end
+                           else
+                           HyperCahaya(CFrame.new(-2662.818603515625, 1062.3480224609375, -11853.6953125))
+                               if game:GetService("ReplicatedStorage"):FindFirstChild("Dough King") then
+                                   HyperCahaya(game:GetService("ReplicatedStorage"):FindFirstChild("Dough King").HumanoidRootPart.CFrame * CFrame.new(2,20,2))
+                               else
+                                   if  _G.AutodoughkingHop then
+                                       Hop()
+                                   end
+                               end
+                           end
+                       end)
+                   end
+               end
+           end)
+VisualX:AddToggle("Buy Legendary Sword Hop",_G.AutoBuyLegendarySword_Hop,function(value)
+        _G.AutoBuyLegendarySword_Hop = value
+    end)
+
+    VisualX:AddToggle("Buy Enchancement Hop Server",_G.AutoBuyEnchancementColour_H0p,function(value)
+        _G.AutoBuyEnchancementColour_H0p = value
+    end)
+    
+    spawn(function()
+        while wait() do
+            if _G.AutoBuyEnchancementColour then
+                local args = {
+                    [1] = "ColorsDealer",
+                    [2] = "2"
+                }
+                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(args))
+                if _G.AutoBuyEnchancementColour_H0p and _G.AutoBuyEnchancementColour and not World1 then
+                    wait(10)
+                    Hop()
+                end
+            end 
+        end
+    end)
+]]
+    local function sendDiscordMessage(description, fields, url)
+        local data = {
+            ["username"] = 'Spotify Hub',
+            ['content'] = '',
+            ["avatar_url"] = "https://cdn.discordapp.com/attachments/1262105882871730347/1280929213607579678/armor.jpg",
+            ["embeds"] = {
+                {
+                    ["description"] = description,
+                    ["color"] = tonumber(0xff0000),
+                    ["type"] = "rich",
+                    ["fields"] = fields,
+                    ["footer"] = {
+                        ["text"] = "Created By 𝕭𝖔𝖙𝖚𝖓𝖆.𝖎𝖓𝖈",
+                        ["icon_url"] = "https://cdn.discordapp.com/attachments/1262105882871730347/1291060042354790461/MaleOcs_r.jpeg"
+                    },
+                    ["timestamp"] = DateTime.now():ToIsoDate(),
+                }
+            },
+        }
+    
+        local jsonData = game:GetService("HttpService"):JSONEncode(data)
+        local headers = {["content-type"] = "application/json"}
+        local request = http_request or request or HttpPost or syn.request
+        request({Url = url, Body = jsonData, Method = "POST", Headers = headers})
+    end
+    
+    local PlayersCount = #game.Players:GetPlayers()
+    local location = (game.PlaceId == 2753915549 and "Sea 1") or (game.PlaceId == 4442272183 and "Sea 2") or (game.PlaceId == 7449423635 and "Sea 3") or "Unknown Location"
+    local JobIdMessage = ''.. tostring(game.JobId) ..''
+    -- Fungsi untuk mendapatkan persentase fase bulan
+    local function getMoonPhase()
+        local Moon = {
+            ['8'] = "http://www.roblox.com/asset/?id=9709149431", 
+            ['7'] = "http://www.roblox.com/asset/?id=9709149052", 
+            ['6'] = "http://www.roblox.com/asset/?id=9709143733", 
+            ['5'] = "http://www.roblox.com/asset/?id=9709150401", 
+            --['4'] = "http://www.roblox.com/asset/?id=9709135895",  
+            --['3'] = "http://www.roblox.com/asset/?id=9709139597", 
+            --['2'] = "http://www.roblox.com/asset/?id=9709150086", 
+            --['1'] = "http://www.roblox.com/asset/?id=9709149680", 
+        }
+    
+        for i, v in pairs(Moon) do
+            if game:GetService("Lighting").Sky.MoonTextureId == v then
+                return i / 8 * 100
+            end
+        end
+        return 0
+    end
+    
+    -- Loop pengecekan setiap 10 detik
+    while true do
+        -- Cek fase bulan
+        local JoinServerMessage = 'game:GetService("TeleportService"):TeleportToPlaceInstance(' .. tostring(game.PlaceId) .. ', "' .. tostring(game.JobId) .. '", game:GetService("Players").LocalPlayer)'
+        local JobIdMessage = ''.. tostring(game.JobId) ..''
+        local moonPhase = getMoonPhase()
+        if moonPhase > 0 then
+            sendDiscordMessage(
+                "**__Moon Phase__**",
+                {
+                    {["name"] = "<:member:1307930153980268635> Players", ["value"] = '```' .. tostring(PlayersCount) .. '/12```', ["inline"] = true},
+                    {["name"] = "<:blackhole:1307929909829570561> World", ["value"] = '```' .. location .. '```', ["inline"] = true},
+                    {["name"] = "<a:fullmoon:1295085809954984037> Moon Phase", ["value"] = '```' .. tostring(moonPhase) .. '%```', ["inline"] = true},
+                    {["name"] = "Job Id", ["value"] = JobIdMessage, ["inline"] = false},
+                    {["name"] = "Script Join", ["value"] = JoinServerMessage, ["inline"] = false}
+                },
+                "https://medusastore.tech/api/check?pesan=FULLMOON"
+            )
+        end
+    
+        -- Cek kehadiran NPC atau Boss dan item "Fist of Darkness"
+        local isEnemyFound = game:GetService("ReplicatedStorage"):FindFirstChild("Diablo") or
+                             game:GetService("ReplicatedStorage"):FindFirstChild("Deandre") or
+                             game:GetService("ReplicatedStorage"):FindFirstChild("Urban") or
+                             game:GetService("Workspace").Enemies:FindFirstChild("Diablo") or
+                             game:GetService("Workspace").Enemies:FindFirstChild("Deandre") or
+                             game:GetService("Workspace").Enemies:FindFirstChild("Urban")
+    
+        if isEnemyFound then
+            sendDiscordMessage(
+                "**__Elite Hunter__**",
+                {
+                    {["name"] = "<:member:1307930153980268635> Players", ["value"] = '```' .. tostring(PlayersCount) .. '/12```', ["inline"] = true},
+                    {["name"] = "<:blackhole:1307929909829570561> World", ["value"] = '```' .. location .. '```', ["inline"] = true},
+                    {["name"] = "<:botunalock:1291855989997441144> Elite Hunter", ["value"] = '```✅```', ["inline"] = false},
+                    {["name"] = "Job Id", ["value"] = JobIdMessage, ["inline"] = false},
+                    {["name"] = "Script Join", ["value"] = JoinServerMessage, ["inline"] = false}
+                },
+                "https://medusastore.tech/api/check?pesan=ELITEHUNTER"
+            )
+        end
+    
+        -- Cek keberadaan item "Fist of Darkness"
+        local isItemFound = false
+        for _, player in pairs(game.Players:GetPlayers()) do
+            local character = player.Character
+            if character and character:FindFirstChild("God's Chalice") then
+                isItemFound = true
+                break
+            end
+    
+            local backpack = player:FindFirstChildOfClass("Backpack")
+            if backpack and backpack:FindFirstChild("God's Chalice") then
+                isItemFound = true
+                break
+            end
+        end
+    
+        if not isItemFound then
+            for _, item in pairs(game.Workspace:GetChildren()) do
+                if item.Name == "Gos's Chalice" then
+                    isItemFound = true
+                    break
+                end
+            end
+        end
+    
+        if isItemFound then
+            sendDiscordMessage(
+                "**__God's Chalice__**",
+                {
+                    {["name"] = "<:member:1307930153980268635> Players", ["value"] = '```' .. tostring(PlayersCount) .. '/12```', ["inline"] = true},
+                    {["name"] = "<:blackhole:1307929909829570561> World", ["value"] = '```' .. location .. '```', ["inline"] = true},
+                    {["name"] = "<a:bluecrown:1307963967876108298> Item Status", ["value"] = '```✅```', ["inline"] = true},
+                    {["name"] = "Job Id", ["value"] = JobIdMessage, ["inline"] = false},
+                    {["name"] = "Script Join", ["value"] = JoinServerMessage, ["inline"] = false}
+                },
+                "https://medusastore.tech/api/check?pesan=GODCHALICE"
+            )
+        end
+    
+    local webhookMirageIsland = "https://medusastore.tech/api/check?pesan=MIRAGEISLAND"
+    local webhookFrozenDimension = "https://medusastore.tech/api/check?pesan=FROZENISLAND"
+    local webhookKitsuneIsland = "https://medusastore.tech/api/check?pesan=KITSUNEISLAND"
+    local webhookPrehistoricIsland = "https://medusastore.tech/api/check?pesan=PREHISTORICISLAND"
+    -- Deteksi Mirage Island
+    local MirageIslandFound = game.Workspace:FindFirstChild("Mirage Island") or game.Workspace._WorldOrigin.Locations:FindFirstChild('Mirage Island') or game.Workspace:FindFirstChild("Mystic Island") or game.Workspace._WorldOrigin.Locations:FindFirstChild('Mystic Island')
+    if MirageIslandFound then
+        sendDiscordMessage(
+            "**__Mirage Island__**",
+            {
+                {["name"] = "<:member:1307930153980268635> Players", ["value"] = '```' .. tostring(PlayersCount) .. '/12```', ["inline"] = true},
+                {["name"] = "<:blackhole:1307929909829570561> World", ["value"] = '```' .. location .. '```', ["inline"] = true},
+                {["name"] = "<a:w_island:1302673813032669316> Mirage Island", ["value"] = '```✅```', ["inline"] = false},
+                {["name"] = "Job Id", ["value"] = JobIdMessage, ["inline"] = false},
+                {["name"] = "Script Join", ["value"] = JoinServerMessage, ["inline"] = false},
+                {["name"] = "Owner Webhook", ["value"] = "<@1173666284165140523>", ["inline"] = false}
+            },
+            webhookMirageIsland
+        )
+    end
+    
+    -- Deteksi Frozen Dimension
+    local FrozenDimensionFound = game.Workspace._WorldOrigin.Locations:FindFirstChild('Frozen Dimension') or game.Workspace:FindFirstChild("Frozen Dimension")
+    if FrozenDimensionFound then
+        sendDiscordMessage(
+            "**__Frozen Dimension__**",
+            {
+                {["name"] = "<:member:1307930153980268635> Players", ["value"] = '```' .. tostring(PlayersCount) .. '/12```', ["inline"] = true},
+                {["name"] = "<:blackhole:1307929909829570561> World", ["value"] = '```' .. location .. '```', ["inline"] = true},
+                {["name"] = "<a:w_island:1302673813032669316> Frozen Dimension", ["value"] = '```✅```', ["inline"] = false},
+                {["name"] = "Job Id", ["value"] = JobIdMessage, ["inline"] = false},
+                {["name"] = "Script Join", ["value"] = JoinServerMessage, ["inline"] = false},
+                {["name"] = "Owner Webhook", ["value"] = "<@1173666284165140523>", ["inline"] = false}
+            },
+            webhookFrozenDimension
+        )
+    end
+    
+    -- Deteksi Kitsune Island
+    local KitsuneIslandFound = game.Workspace:FindFirstChild('Kitsune Island') or game.Workspace._WorldOrigin.Locations:FindFirstChild('Kitsune Island')
+    if KitsuneIslandFound then
+        sendDiscordMessage(
+            "**__Kitsune Island__**",
+            {
+                {["name"] = "Players In Server", ["value"] = '```' .. tostring(PlayersCount) .. '/12```', ["inline"] = true},
+                {["name"] = "<:blackhole:1307929909829570561> World", ["value"] = '```' .. location .. '```', ["inline"] = true},
+                {["name"] = "<a:w_island:1302673813032669316> Kitsune Island", ["value"] = '```✅```', ["inline"] = false},
+                {["name"] = "Job Id", ["value"] = JobIdMessage, ["inline"] = false},
+                {["name"] = "Script Join", ["value"] = JoinServerMessage, ["inline"] = false},
+                {["name"] = "Owner Webhook", ["value"] = "<@1173666284165140523>", ["inline"] = false}
+            },
+            webhookKitsuneIsland
+        )
+    end
+    
+    -- Deteksi Kitsune Island
+    local PrehistoricIslandFound = game.Workspace:FindFirstChild('Prehistoric Island') or game.Workspace._WorldOrigin.Locations:FindFirstChild('Prehistoric Island')
+    if PrehistoricIslandFound then
+        sendDiscordMessage(
+            "**__Prehistoric Island__**",
+            {
+                {["name"] = "Players In Server", ["value"] = '```' .. tostring(PlayersCount) .. '/12```', ["inline"] = true},
+                {["name"] = "<:blackhole:1307929909829570561> World", ["value"] = '```' .. location .. '```', ["inline"] = true},
+                {["name"] = "<a:w_island:1302673813032669316> Prehistoric Island", ["value"] = '```Is Spawned```', ["inline"] = false},
+                {["name"] = "Job Id", ["value"] = JobIdMessage, ["inline"] = false},
+                {["name"] = "Script Join", ["value"] = JoinServerMessage, ["inline"] = false},
+                {["name"] = "Owner Webhook", ["value"] = "<@1173666284165140523>", ["inline"] = false}
+            },
+            webhookPrehistoricIsland
+        )
+    end
+        wait(10)
+    end
